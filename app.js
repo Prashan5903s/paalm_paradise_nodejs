@@ -9,6 +9,7 @@ const userRouter = require('./route/user')
 const path = require('path');
 const bcrypt = require('bcryptjs')
 const fs = require('fs');
+const Maintenance = require('./model/Maintenance')
 const cors = require('cors');
 const User = require('./model/User');
 
@@ -22,8 +23,6 @@ const port = process.env.PORT || 4000;
 // Define public directory
 const publicDir = path.join(__dirname, 'public');
 const imageDir = path.join(publicDir, 'company_logo');
-
-
 
 // Ensure /public/company_logo folder exists
 if (!fs.existsSync(imageDir)) {

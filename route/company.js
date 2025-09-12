@@ -19,6 +19,12 @@ const contentFolderController = require('../controller/Company/ContentFolderCont
 const moduleController = require('../controller/Company/ModuleController')
 const activityController = require('../controller/Company/ActivityController')
 const programScheduleController = require('../controller/Company/ProgramScheduleController')
+const towerController = require('../controller/Company/TowerController');
+const floorController = require('../controller/Company/FloorController')
+const apartmentController = require('../controller/Company/ApartmentController')
+const cameraController = require('../controller/Company/CameraController')
+const billController = require('../controller/Company/BillController')
+const paymentController = require('../controller/Company/PaymentController')
 
 const createUpload = require('../util/upload');
 
@@ -49,7 +55,7 @@ const activityUpload = createUpload(
         'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'video/mp4'
     ],
-    'activity', // Folder inside /public
+    'bills', // Folder inside /public
     500 // Max size in MB
 );
 
@@ -183,5 +189,35 @@ router.put('/quiz/question/:moduleId/:activityId', isAuth, quizAPIController.put
 router.get('/program/schedule/data/:contentFolderId', isAuth, programScheduleController.getProgramScheduleAPI)
 router.get('/program/schedule/create', isAuth, programScheduleController.getCreateDataAPI)
 router.post('/program/schedule/:contentFolderId', isAuth, programScheduleController.postProgramScheduleAPI)
+
+//This route is for tower
+router.get('/tower', isAuth, towerController.getTowerAPI)
+router.post('/tower', isAuth, towerController.postTowerAPI)
+router.put('/tower/:towerId', isAuth, towerController.putTowerAPI)
+
+//This route is for floor
+router.get('/floor', isAuth, floorController.getFloorAPI)
+router.get('/floor/create', isAuth, floorController.getCreateAPI)
+router.post('/floor', isAuth, floorController.postFloorController)
+router.put('/floor/:floorId', isAuth, floorController.updateFloorAPI)
+
+//This route is for Apartment
+router.get('/apartment', isAuth, apartmentController.getApartmentAPI)
+router.get('/apartment/create', isAuth, apartmentController.createApartmentAPI)
+router.post('/apartment', isAuth, apartmentController.postApartmentAPI)
+router.put('/apartment/:apartmentId', isAuth, apartmentController.updateApartmentAPI)
+
+//This route is for camera
+router.get('/camera', isAuth, cameraController.getCameraController)
+
+//This route is for Bill
+router.get('/bill/data/:type', isAuth, billController.getBillData)
+router.get('/bill/create', isAuth, billController.getCreateBill)
+router.post('/bill', isAuth, ...activityUpload.middleware('image'), billController.postBillController)
+router.put('/bill/update/:billId', isAuth, ...activityUpload.middleware('image'), billController.putBillController)
+
+//This route is for payment
+router.get("/payment", isAuth, paymentController.getPaymentController)
+router.post('/payment', isAuth, paymentController.postPaymentController)
 
 module.exports = router;

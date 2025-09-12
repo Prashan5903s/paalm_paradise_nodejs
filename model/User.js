@@ -1,27 +1,5 @@
-const mongoose = require('mongoose');
-const {
-    Schema,
-    Types
-} = mongoose;
-const {
-    encrypt,
-    decrypt,
-    hash,
-    normalizeEmail,
-    normalizePhone
-} = require('../util/encryption');
-
-const UserCodeSchema = new mongoose.Schema({
-    code: {
-        type: String,
-        required: true,
-        unique: false // unique across users? handled manually
-    },
-    issued_on: Date, // Optional: date when it was issued
-    type: String // Optional: internal, external, etc.
-}, {
-    _id: true
-}); // Avoids creating _id for sub-docs
+const mongoose = require("mongoose");
+const { Schema, Types } = mongoose;
 
 const userSchema = new Schema({
     company_id: {
@@ -29,8 +7,9 @@ const userSchema = new Schema({
         required: true,
         ref: "users",
         validate: {
-            validator: v => Types.ObjectId.isValid(v) || typeof v === 'number',
-            message: props => `${props.value} is not a valid ObjectId or number`,
+            validator: (v) => Types.ObjectId.isValid(v) || typeof v === "number",
+            message: (props) =>
+                `${props.value} is not a valid ObjectId or number`,
         },
     },
     first_name: {
@@ -46,21 +25,20 @@ const userSchema = new Schema({
     company_name: {
         type: String,
         maxlength: 255,
-        required: false
+        required: false,
     },
-    email: {
-        type: String,
-    },
-    alternative_email: {
+    user_type: {
         type: String,
         maxlength: 255,
         required: false,
+    },
+    email: {
+        type: String,
     },
     password: {
         type: String,
         maxlength: 255,
         required: true,
-        // select: false
     },
     phone: {
         type: String,
@@ -72,17 +50,13 @@ const userSchema = new Schema({
     address: {
         type: String,
         maxlength: 4000,
+        required: false,
     },
     pincode: {
         type: String,
         required: false,
-        minLength: 6,
-        maxlength: 10
-    },
-    package_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: false,
-        ref: "package"
+
+        maxlength: 10,
     },
     country_id: {
         type: String,
@@ -97,35 +71,83 @@ const userSchema = new Schema({
         type: String,
         required: false,
     },
-    gst_no: {
-        type: String,
+    tower_id: {
+        type: mongoose.Schema.Types.ObjectId,
         required: false,
     },
-    pan_no: {
-        type: String,
+    floor_id: {
+        type: mongoose.Schema.Types.ObjectId,
         required: false,
     },
-    website: {
-        type: String,
+    apartment_id: {
+        type: mongoose.Schema.Types.ObjectId,
         required: false,
     },
     photo: {
         type: String,
-        // maxlength: 255
     },
-    is_verified: {
-        type: Boolean
+    cameras: [
+        {
+            title: {
+                type: String,
+                required: true,
+                maxlength: 255,
+            },
+            ip: {
+                type: String,
+                required: true,
+                maxlength: 5000,
+                validate: {
+                    validator: function (v) {
+                        // Basic URL check (http/https)
+                        return /^https?:\/\/.+/.test(v);
+                    },
+                    message: (props) => `${props.value} is not a valid camera URL`,
+                },
+            },
+        },
+    ],
+    apartment_data: [
+        {
+            tower_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: false,
+            },
+            floor_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: false,
+            },
+            apartment_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                required: false,
+            }
+        },
+    ],
+    qnap_username: {
+        type: String,
+        required: true,
+        maxlength: 255,
+    },
+    qnap_password: {
+        type: String,
+        required: true,
+        maxlength: 255,
+    },
+    sip_extension: {
+        type: String,
+        required: false,
+        maxlength: 255,
     },
     created_at: {
         type: Date,
-        default: Date.now
+        default: Date.now,
     },
     updated_at: {
         type: Date,
-        default: Date.now
+        default: Date.now,
     },
     deleted_at: {
-        type: Date
+        type: Date,
     },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
@@ -137,8 +159,9 @@ const userSchema = new Schema({
         ref: "users",
         required: true,
         validate: {
-            validator: v => Types.ObjectId.isValid(v) || typeof v === 'number',
-            message: props => `${props.value} is not a valid ObjectId or number`,
+            validator: (v) => Types.ObjectId.isValid(v) || typeof v === "number",
+            message: (props) =>
+                `${props.value} is not a valid ObjectId or number`,
         },
     },
     parent_company_id: {
@@ -146,95 +169,41 @@ const userSchema = new Schema({
         ref: "users",
         required: true,
         validate: {
-            validator: v => Types.ObjectId.isValid(v) || typeof v === 'number',
-            message: props => `${props.value} is not a valid ObjectId or number`,
+            validator: (v) => Types.ObjectId.isValid(v) || typeof v === "number",
+            message: (props) =>
+                `${props.value} is not a valid ObjectId or number`,
         },
-    },
-    designation_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "destinations",
-        set: v => (v === '' ? undefined : v)
-    },
-    zone_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "zones",
-        set: v => (v === '' ? undefined : v)
-    },
-    region_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "zones",
-        set: v => (v === '' ? undefined : v)
-    },
-    branch_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "zones",
-        set: v => (v === '' ? undefined : v)
-    },
-    department_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "zones",
-        set: v => (v === '' ? undefined : v)
     },
     dob: {
         type: Date,
         required: false,
     },
-    urn_no: {
-        type: String,
-        required: false,
-    },
-    idfa_code: {
-        type: String,
-        required: false,
-    },
-    application_no: {
-        type: String,
-        required: false,
-    },
-    licence_no: {
-        type: String,
-        required: false,
-    },
-    employee_type: {
-        type: String,
-        required: false,
-    },
-    participation_type_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "participation_types",
-        set: v => (v === '' ? undefined : v)
-    },
-    codes: [UserCodeSchema], // Array of codes
 });
 
-// UserSchema.index({ 'employee_codes.code': 1 });
-
-userSchema.virtual('emp_id').get(function () {
-    const activeCodeObj = (this.codes || []).find(code => code.type === 'active');
+// ✅ Virtual for employee ID
+userSchema.virtual("emp_id").get(function () {
+    const activeCodeObj = (this.codes || []).find(
+        (code) => code.type === "active"
+    );
     return activeCodeObj?.code || null;
 });
 
-userSchema.virtual('roles', {
-    ref: 'role_user',
-    localField: '_id',
-    foreignField: 'user_id',
-    justOne: false
+// ✅ Virtual population for roles
+userSchema.virtual("roles", {
+    ref: "role_user",
+    localField: "_id",
+    foreignField: "user_id",
+    justOne: false,
 });
 
-userSchema.set('toJSON', {
+// ✅ Enable virtuals in JSON / Object
+userSchema.set("toJSON", {
     virtuals: true,
-    getters: true
+    getters: true,
 });
-userSchema.set('toObject', {
+userSchema.set("toObject", {
     virtuals: true,
-    getters: true
+    getters: true,
 });
-
-// userSchema.pre('save', function (next) {
-//     if (this.isModified('first_name')) {
-//       this.first_name = encrypt(this.first_name.toLowerCase());
-//     }
-//     next();
-//   });
 
 module.exports = mongoose.model("users", userSchema);

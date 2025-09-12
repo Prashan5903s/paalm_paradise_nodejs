@@ -1,15 +1,103 @@
 const User = require('../../model/User');
 const Role = require('../../model/Role');
 const RoleUser = require('../../model/RoleUser');
-const Country = require('../../model/Country');
-const PackageType = require('../../model/PackageType');
 const userService = require('../../services/userService');
 const bcrypt = require('bcryptjs')
+const Apartment = require('../../model/Apartment')
 const { ObjectId } = require('mongoose');
 const { encryptDeterministic, hashSearchField } = require('../../util/encryption');
 
 const { hash, normalizeEmail, normalizePhone } = require('../../util/encryption');
 const { successResponse, errorResponse, warningResponse } = require('../../util/response');
+
+const updateApartmentStatus = async (idArray) => {
+    try {
+        await Apartment.updateMany(
+            { _id: { $in: idArray } }, // find apartments whose _id is in idArray
+            { $set: { status: true } } // update status to true
+        );
+    } catch (error) {
+        console.error("Error updating apartments:", error);
+    }
+};
+
+const normalizeCameras = (raw, body) => {
+    const indexed = parseIndexedRowsFromBody(body, "cameras", ["title", "ip"]);
+    if (indexed.length) return indexed;
+
+    if (Array.isArray(raw)) return raw;
+    if (raw && typeof raw === "object") return [raw];
+
+    if (typeof raw === "string") {
+        if (raw.trim() === "[object Object]") return [];
+        const parsed = safeJSONParse(raw);
+        if (Array.isArray(parsed)) return parsed;
+        if (parsed && typeof parsed === "object") return [parsed];
+
+        if (raw.includes("|")) {
+            return raw.split(",").map(s => {
+                const [title, ip] = s.split("|");
+                return { title: (title || "").trim(), ip: (ip || "").trim() };
+            }).filter(c => c.title || c.ip);
+        }
+        return [];
+    }
+    return [];
+};
+
+const normalizeApartmentData = (raw, body) => {
+    // prefer indexed multipart fields: apartment_data[0][tower_id] etc
+    const indexed = parseIndexedRowsFromBody(body, "apartment_data", ["tower_id", "floor_id", "apartment_id"]);
+    if (indexed.length) return indexed.map(row => ({
+        tower_id: typeof row.tower_id === "string" ? row.tower_id.trim() : row.tower_id,
+        floor_id: typeof row.floor_id === "string" ? row.floor_id.trim() : row.floor_id,
+        apartment_id: typeof row.apartment_id === "string" ? row.apartment_id.trim() : row.apartment_id
+    }));
+
+    // if already an array
+    if (Array.isArray(raw)) {
+        return raw.map(r => {
+            if (!r || typeof r !== "object") return null;
+            return {
+                tower_id: typeof r.tower_id === "string" ? r.tower_id.trim() : r.tower_id,
+                floor_id: typeof r.floor_id === "string" ? r.floor_id.trim() : r.floor_id,
+                apartment_id: typeof r.apartment_id === "string" ? r.apartment_id.trim() : r.apartment_id
+            };
+        }).filter(Boolean);
+    }
+
+    // if plain object
+    if (raw && typeof raw === "object") {
+        return [{
+            tower_id: typeof raw.tower_id === "string" ? raw.tower_id.trim() : raw.tower_id,
+            floor_id: typeof raw.floor_id === "string" ? raw.floor_id.trim() : raw.floor_id,
+            apartment_id: typeof raw.apartment_id === "string" ? raw.apartment_id.trim() : raw.apartment_id
+        }];
+    }
+
+    // string cases
+    if (typeof raw === "string") {
+        if (raw.trim() === "[object Object]") return [];
+        const parsed = safeJSONParse(raw);
+        if (Array.isArray(parsed)) return normalizeApartmentData(parsed, {}); // recursive handle
+        if (parsed && typeof parsed === "object") return normalizeApartmentData(parsed, {});
+        // maybe CSV-ish "tower|floor|apt,tower|floor|apt"
+        if (raw.includes("|")) {
+            const arr = raw.split(",").map(s => {
+                const [tower, floor, apt] = s.split("|");
+                return {
+                    tower_id: (tower || "").trim(),
+                    floor_id: (floor || "").trim(),
+                    apartment_id: (apt || "").trim()
+                };
+            }).filter(r => r.tower_id || r.floor_id || r.apartment_id);
+            return arr;
+        }
+        return [];
+    }
+
+    return [];
+};
 
 
 const pick = (obj, fields) => Object.fromEntries(fields.map(key => [key, obj[key]]));
@@ -29,51 +117,175 @@ exports.getCompanyIndexAPI = async (req, res, next) => {
     });
 }
 
+// --- helpers (place once at top of file) ---
+const sanitizeObjectIds = (data, objectIdFields) => {
+    // If data[field] is "", undefined or null -> set to null
+    // If data[field] is an array of objects -> sanitize each object's fields too (common for apartment_data)
+    objectIdFields.forEach(f => {
+        if (!(f in data)) return;
+
+        const v = data[f];
+        if (v === "" || v === undefined || v === null) {
+            data[f] = null;
+            return;
+        }
+
+        // If string that looks like "null" or "undefined"
+        if (typeof v === "string" && (v.trim() === "" || v.trim().toLowerCase() === "null" || v.trim().toLowerCase() === "undefined")) {
+            data[f] = null;
+            return;
+        }
+
+        // If array of objects, sanitize inner fields that look like object ids
+        if (Array.isArray(v)) {
+            data[f] = v.map(item => {
+                if (item && typeof item === "object") {
+                    const copy = { ...item };
+                    Object.keys(copy).forEach(k => {
+                        if (copy[k] === "" || copy[k] === undefined || copy[k] === null) copy[k] = null;
+                    });
+                    return copy;
+                }
+                return item;
+            });
+        }
+    });
+};
+
+// Utility: safe JSON parse
+const safeJSONParse = (s) => {
+    try { return JSON.parse(s); } catch { return null; }
+};
+
+// parse indexed multipart like apartment_data[0][tower_id]
+const parseIndexedRowsFromBody = (body, baseName, fields) => {
+    const map = new Map(); // idx -> object
+    for (const key of Object.keys(body)) {
+        const regex = new RegExp(`^${baseName}\\[(\\d+)]\\[(.+)]$`); // e.g. apartment_data[0][tower_id]
+        const m = key.match(regex);
+        if (!m) continue;
+        const idx = Number(m[1]);
+        const field = m[2];
+        if (fields && !fields.includes(field)) continue; // optional filter of allowed subfields
+        const item = map.get(idx) || {};
+        item[field] = body[key];
+        map.set(idx, item);
+    }
+    if (map.size === 0) return [];
+    return [...map.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([, v]) => v)
+        .filter(v => v && Object.keys(v).length);
+};
+
+// sanitize a row array shape to ensure strings trimmed and empty -> null as appropriate
+const normalizeApartmentRowsShape = (rows) => {
+    if (!Array.isArray(rows)) return [];
+    return rows.map(r => ({
+        tower_id: (typeof r.tower_id === "string" && r.tower_id.trim() !== "") ? r.tower_id.trim() : null,
+        floor_id: (typeof r.floor_id === "string" && r.floor_id.trim() !== "") ? r.floor_id.trim() : null,
+        apartment_id: (typeof r.apartment_id === "string" && r.apartment_id.trim() !== "") ? r.apartment_id.trim() : null,
+    })).filter(r => r.tower_id || r.floor_id || r.apartment_id);
+};
+
+// --- createUserAPI (replace your old function) ---
 exports.createUserAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        const imageUrl = req.file?.filename
-            ? `/img/user-profile/${req.file.filename}`
-            : '';
+        const imageUrl = req.file?.filename ? `/img/user-profile/${req.file.filename}` : '';
 
         const allowedFields = [
             'first_name', 'first_name_search', 'last_name', 'email', 'country_id', 'state_id',
-            'city_id', 'address', 'status', 'phone', 'dob', 'website', "region_id", "branch_id",
-            'pincode', 'designation_id', 'urn_no', 'idfa_code', "department_id",
-            'application_no', 'licence_no', 'zone_id', 'employee_type', 'participation_type_id'
+            'city_id', 'address', 'status', 'phone', 'dob', 'website', 'floor_id', 'apartment_id',
+            'pincode', 'designation_id', 'urn_no', 'idfa_code', 'department_id', 'cameras',
+            'qnap_username', 'qnap_password', 'sip_extension', 'user_type', 'apartment_data',
+            'application_no', 'licence_no', 'tower_id', 'employee_type', 'participation_type_id',
+            'user_code'
         ];
 
-        const existingUserEmail = await User.findOne({ email_hash: hash(normalizeEmail(req.body.email)), company_id: userId });
-        if (existingUserEmail) {
+        // ---------- helpers used above are available here ----------
+
+        const toBool = v => {
+            if (typeof v === 'boolean') return v;
+            if (typeof v === 'string') return v.toLowerCase() === 'true';
+            return !!v;
+        };
+
+        const userExists = await User.findOne({
+            email_hash: hash(normalizeEmail(req.body.email)),
+            company_id: userId
+        });
+        if (userExists) {
             return errorResponse(res, 'This email already been taken!', {}, 400);
         }
 
-        const existingUserPhone = await User.findOne({ phone_hash: hash(normalizePhone(req.body.phone)), company_id: userId });
-        if (existingUserPhone) {
+        const phoneExists = await User.findOne({
+            phone_hash: hash(normalizePhone(req.body.phone)),
+            company_id: userId
+        });
+        if (phoneExists) {
             return errorResponse(res, 'This phone already been taken!', {}, 400);
         }
 
+        // pick only allowed fields
         const userData = pick(req.body, allowedFields);
 
+        // Normalize booleans
+        userData.status = toBool(userData.status);
+
+        // Ensure sip_extension exists (avoid Mongoose required error). Set safe default if absent.
+        if (!("sip_extension" in userData) || userData.sip_extension === undefined || userData.sip_extension === null) {
+            userData.sip_extension = ""; // adjust if your schema expects null or empty string
+        }
+
+        // Normalize cameras
+        userData.cameras = normalizeCameras(req.body.cameras, req.body)
+            .map(c => ({
+                title: typeof c?.title === 'string' ? c.title.trim() : '',
+                ip: typeof c?.ip === 'string' ? c.ip.trim() : ''
+            }))
+            .filter(c => c.title || c.ip);
+
+        const apartmentIds = (req.body.apartment_data || [])
+            .map(item => item.apartment_id)
+            .filter(Boolean); // removes undefined/null/empty
+
+        updateApartmentStatus(apartmentIds)
+
+        // Normalize apartment_data robustly
+        userData.apartment_data = normalizeApartmentData(req.body.apartment_data, req.body);
+        userData.apartment_data = normalizeApartmentRowsShape(userData.apartment_data);
+
+        // Sanitize ObjectId-like fields (including possibly nested arrays)
+        sanitizeObjectIds(userData, [
+            "floor_id", "apartment_id", "designation_id",
+            "department_id", "tower_id", "participation_type_id",
+            "country_id", "state_id", "city_id"
+        ]);
+
+        // Password required on create
+        if (!req.body.password) {
+            return errorResponse(res, 'Password is required', {}, 400);
+        }
         const hashedPassword = await bcrypt.hash(req.body.password, 12);
 
+        // Employee codes
         let processedCodes = [];
         if (req.body.user_code != undefined) {
             const result = await processEmployeeCodesForUser({
                 rawCodes: req.body.user_code,
-                userId: null,         // No userId yet since new user
+                userId: null,
                 existingUser: null
             });
-
             if (!result.success) {
                 return errorResponse(res, result.message, {}, 400);
             }
-
             processedCodes = result.codes;
         }
 
-        const user = new User({
+        // Build model payload
+        const userPayload = {
             ...userData,
             photo: imageUrl,
             password: hashedPassword,
@@ -81,29 +293,33 @@ exports.createUserAPI = async (req, res, next) => {
             master_company_id: userId,
             parent_company_id: userId,
             created_by: userId,
-            codes: processedCodes,
-        });
+            codes: processedCodes
+        };
 
+        // Save
+        const user = new User(userPayload);
         await user.save();
 
-        // Handle roles from request
+        // Roles: accept string or array
         const roles = Array.isArray(req.body.roles)
             ? req.body.roles
-            : typeof req.body.roles === 'string'
-                ? req.body.roles.split(',').map(role => role.trim())
+            : typeof req.body.roles === 'string' && req.body.roles.trim().length
+                ? req.body.roles.split(',').map(r => r.trim())
                 : [];
 
-        const roleDocs = await Role.find({ _id: { $in: roles } });
+        if (roles.length) {
+            const roleDocs = await Role.find({ _id: { $in: roles } });
+            if (roleDocs.length) {
+                const roleUserInserts = roleDocs.map(role => ({
+                    user_id: user._id,
+                    role_id: role._id,
+                    assigned_by: userId
+                }));
+                await RoleUser.insertMany(roleUserInserts);
+            }
+        }
 
-        const roleUserInserts = roleDocs.map(role => ({
-            user_id: user._id,
-            role_id: role._id,
-            assigned_by: userId,
-        }));
-
-        await RoleUser.insertMany(roleUserInserts);
-
-        return successResponse(res, "User created successfully!", user);
+        return successResponse(res, 'User created successfully!', user);
     } catch (error) {
         next(error);
     }
@@ -182,90 +398,107 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
     return { success: true, codes: updatedExistingCodes };
 };
 
+// --- updateUserAPI (replace your old function) ---
 exports.updateUserAPI = async (req, res, next) => {
     try {
-        const userId = req.params.id; // assuming user ID is passed in URL
+        const userId = req.params.id;
         const currentUser = req.userId;
 
         const existingUser = await User.findById(userId);
-
-        if (!existingUser) {
-            return errorResponse(res, "User not found", 404);
-        }
+        if (!existingUser) return errorResponse(res, "User not found", 404);
 
         const existingUserEmail = await User.findOne({
             email_hash: hash(normalizeEmail(req.body.email)),
             company_id: currentUser,
             _id: { $ne: userId }
         });
-
-        if (existingUserEmail) {
-            return errorResponse(res, 'This email already been taken!', {}, 400);
-        }
+        if (existingUserEmail) return errorResponse(res, "This email already been taken!", {}, 400);
 
         const existingUserPhone = await User.findOne({
-            email_hash: hash(normalizePhone(req.body.phone)),
+            phone_hash: hash(normalizePhone(req.body.phone)),
             company_id: currentUser,
             _id: { $ne: userId }
         });
+        if (existingUserPhone) return errorResponse(res, "This phone already been taken!", {}, 400);
 
-        if (existingUserPhone) {
-            return errorResponse(res, 'This phone already been taken!', {}, 400);
-        }
-
-        const imageUrl = req.file?.filename
-            ? `/img/user-profile/${req.file.filename}`
-            : undefined;
+        const imageUrl = req.file?.filename ? `/img/user-profile/${req.file.filename}` : undefined;
 
         const allowedFields = [
-            'first_name', 'last_name', 'email', 'country_id', 'state_id',
-            'city_id', 'address', 'status', 'phone', 'dob', 'website',
-            'pincode', 'designation_id', 'urn_no', 'idfa_code',
-            "region_id", "branch_id", "department_id", "zone_id",
-            'application_no', 'licence_no', 'zone_id', 'employee_type', 'participation_type_id'
+            "first_name", "first_name_search", "last_name", "email", "country_id", "state_id",
+            "city_id", "address", "status", "phone", "dob", "website", "floor_id", "apartment_id",
+            "pincode", "designation_id", "urn_no", "idfa_code", "department_id", "cameras",
+            "qnap_username", "qnap_password", "sip_extension", "apartment_data",
+            "application_no", "licence_no", "tower_id", "employee_type", "participation_type_id",
+            "user_code"
         ];
 
         const updateData = pick(req.body, allowedFields);
 
-        // Optional password update
+        const apartmentIds = (req.body.apartment_data || [])
+            .map(item => item.apartment_id)
+            .filter(Boolean); // removes undefined/null/empty
+
+        updateApartmentStatus(apartmentIds)
+
+        // Ensure sip_extension present so Mongoose required doesn't fail (adjust to your schema expectations)
+        if (!("sip_extension" in updateData) || updateData.sip_extension === undefined || updateData.sip_extension === null) {
+            updateData.sip_extension = ""; // or null depending on schema; choose consistent type
+        }
+
+        // Normalize cameras if provided
+        if ("cameras" in req.body || Object.keys(req.body).some(k => k.startsWith("cameras["))) {
+            updateData.cameras = normalizeCameras(req.body.cameras, req.body)
+                .map(c => ({
+                    title: typeof c?.title === "string" ? c.title.trim() : "",
+                    ip: typeof c?.ip === "string" ? c.ip.trim() : ""
+                }))
+                .filter(c => c.title || c.ip);
+        }
+
+        // Normalize apartment_data if provided
+        if ("apartment_data" in req.body || Object.keys(req.body).some(k => k.startsWith("apartment_data["))) {
+            updateData.apartment_data = normalizeApartmentData(req.body.apartment_data, req.body);
+            updateData.apartment_data = normalizeApartmentRowsShape(updateData.apartment_data);
+        }
+
+        // Sanitize ObjectId-like fields (array-aware)
+        sanitizeObjectIds(updateData, [
+            "floor_id", "apartment_id", "designation_id",
+            "department_id", "tower_id", "participation_type_id",
+            "country_id", "state_id", "city_id"
+        ]);
+
+        // Password update
         if (req.body.password) {
             updateData.password = await bcrypt.hash(req.body.password, 12);
         }
 
-        // Handle employee_codes from string
-        if (req.body.user_code != undefined) {
+        // Handle employee codes
+        if (req.body.user_code !== undefined) {
             const result = await processEmployeeCodesForUser({
                 rawCodes: req.body.user_code,
                 userId,
                 existingUser
             });
-
-            if (result.success) {
-                updateData.codes = result.codes;
-            }
+            if (result.success) updateData.codes = result.codes;
         }
 
+        // Optional photo
+        if (imageUrl) updateData.photo = imageUrl;
 
-        // Optional photo update
-        if (imageUrl) {
-            updateData.photo = imageUrl;
-        }
-
-
+        // Roles
         const roles = Array.isArray(req.body.roles)
             ? req.body.roles
-            : typeof req.body.roles === 'string'
-                ? req.body.roles.split(',').map(r => r.trim())
+            : typeof req.body.roles === "string" && req.body.roles.trim().length
+                ? req.body.roles.split(",").map(r => r.trim())
                 : [];
 
-        // Clear previous roles
         await RoleUser.deleteMany({ user_id: userId });
-
-        // Insert new roles
         if (roles.length > 0) {
             const roleUserDocs = roles.map(roleId => ({
                 user_id: userId,
-                role_id: roleId
+                role_id: roleId,
+                assigned_by: currentUser
             }));
             await RoleUser.insertMany(roleUserDocs);
         }
@@ -277,9 +510,7 @@ exports.updateUserAPI = async (req, res, next) => {
             runValidators: true
         });
 
-        if (!updatedUser) {
-            return errorResponse(res, "User not found", 400);
-        }
+        if (!updatedUser) return errorResponse(res, "User not found", 400);
 
         return successResponse(res, `${updatedUser.first_name} account changes saved!`, updatedUser);
     } catch (error) {
@@ -470,7 +701,7 @@ exports.importAPI = async (req, res, next) => {
             return errorResponse(res, 'Invalid data format', 400);
         }
         const response = await userService.importUsers(res, userId, chunk, roles);
-        
+
         return successResponse(res, "Data loaded", response);
     } catch (error) {
         console.error("Error occurred:", error);

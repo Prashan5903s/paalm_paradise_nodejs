@@ -343,67 +343,71 @@ exports.getPermAllowAPI = async (req, res, next) => {
 
                 const packageId = User.package_id;
 
-                if (!mongoose.Types.ObjectId.isValid(packageId)) {
-                    return errorResponse(res, "Invalid package ID", {}, 400);
+
+                if (packageId) {
+
+                    if (!mongoose.Types.ObjectId.isValid(packageId)) {
+                        return errorResponse(res, "Invalid package ID", {}, 400);
+                    }
+
+                    const packageTypeDoc = await packageType.findOne({
+                        'package.items._id': new mongoose.Types.ObjectId(packageId)
+                    }).lean();
+
+                    if (!packageTypeDoc) {
+                        return errorResponse(res, 'Package type does not exist', {}, 404);
+                    }
+
+                    const matchedItem = packageTypeDoc.package.items.find(item =>
+                        item._id.toString() === packageId.toString()
+                    );
+
+                    if (!matchedItem) {
+                        return errorResponse(res, 'Package does not exist', {}, 404);
+                    }
+
+                    const permission = matchedItem.permissions || {};
+
+                    permissionsStatus.hasDesignationPermission = normalizeToArray(permission[designation]).includes(listing);
+                    permissionsStatus.hasDesignationAddPermission = normalizeToArray(permission[designation]).includes(add);
+                    permissionsStatus.hasDesignationEditPermission = normalizeToArray(permission[designation]).includes(edit)
+
+                    permissionsStatus.hasDepartmentPermission = normalizeToArray(permission[department]).includes(listing);
+                    permissionsStatus.hasDepartmentAddPermission = normalizeToArray(permission[department]).includes(add)
+                    permissionsStatus.hasDepartmentlEditPermission = normalizeToArray(permission[department]).includes(edit)
+
+                    permissionsStatus.hasChannelPermission = normalizeToArray(permission[channel]).includes(listing);
+                    permissionsStatus.hasChannelAddPermission = normalizeToArray(permission[channel]).includes(add);
+                    permissionsStatus.hasChannelEditPermission = normalizeToArray(permission[channel]).includes(edit);
+
+                    permissionsStatus.hasLabelPermission = normalizeToArray(permission[label]).includes(listing);
+
+                    permissionsStatus.hasUserPermission = normalizeToArray(permission[users]).includes(listing);
+                    permissionsStatus.hasUserAddPermission = normalizeToArray(permission[users]).includes(add)
+                    permissionsStatus.hasUserEditPermission = normalizeToArray(permission[users]).includes(edit)
+                    permissionsStatus.hasUserImportPermission = normalizeToArray(permission[users]).includes(import_data);
+
+                    permissionsStatus.hasBranchPermission = normalizeToArray(permission[branch]).includes(listing);
+                    permissionsStatus.hasBranchAddPermission = normalizeToArray(permission[branch]).includes(add)
+                    permissionsStatus.hasBranchEditPermission = normalizeToArray(permission[branch]).includes(edit)
+
+                    permissionsStatus.hasRegionPermission = normalizeToArray(permission[region]).includes(listing);
+                    permissionsStatus.hasRegionAddPermission = normalizeToArray(permission[region]).includes(add)
+                    permissionsStatus.hasRegionEditPermission = normalizeToArray(permission[region]).includes(edit)
+
+                    permissionsStatus.hasZonePermission = normalizeToArray(permission[zone]).includes(listing);
+                    permissionsStatus.hasZoneAddPermission = normalizeToArray(permission[zone]).includes(add);
+                    permissionsStatus.hasZoneEditPermission = normalizeToArray(permission[zone]).includes(edit);
+
+                    permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
+                    permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
+                    permissionsStatus.hasRoleEditPermission = normalizeToArray(permission[role]).includes(edit)
+
+                    permissionsStatus.hasGroupAddPermission = normalizeToArray(permission[group]).includes(add)
+                    permissionsStatus.hasGroupEditPermission = normalizeToArray(permission[group]).includes(edit)
+                    permissionsStatus.hasGroupPermission = normalizeToArray(permission[group]).includes(listing)
+                    permissionsStatus.hasGroupImportData = normalizeToArray(permission[group]).includes(import_data)
                 }
-
-                const packageTypeDoc = await packageType.findOne({
-                    'package.items._id': new mongoose.Types.ObjectId(packageId)
-                }).lean();
-
-                if (!packageTypeDoc) {
-                    return errorResponse(res, 'Package type does not exist', {}, 404);
-                }
-
-                const matchedItem = packageTypeDoc.package.items.find(item =>
-                    item._id.toString() === packageId.toString()
-                );
-
-                if (!matchedItem) {
-                    return errorResponse(res, 'Package does not exist', {}, 404);
-                }
-
-                const permission = matchedItem.permissions || {};
-
-                permissionsStatus.hasDesignationPermission = normalizeToArray(permission[designation]).includes(listing);
-                permissionsStatus.hasDesignationAddPermission = normalizeToArray(permission[designation]).includes(add);
-                permissionsStatus.hasDesignationEditPermission = normalizeToArray(permission[designation]).includes(edit)
-
-                permissionsStatus.hasDepartmentPermission = normalizeToArray(permission[department]).includes(listing);
-                permissionsStatus.hasDepartmentAddPermission = normalizeToArray(permission[department]).includes(add)
-                permissionsStatus.hasDepartmentlEditPermission = normalizeToArray(permission[department]).includes(edit)
-
-                permissionsStatus.hasChannelPermission = normalizeToArray(permission[channel]).includes(listing);
-                permissionsStatus.hasChannelAddPermission = normalizeToArray(permission[channel]).includes(add);
-                permissionsStatus.hasChannelEditPermission = normalizeToArray(permission[channel]).includes(edit);
-
-                permissionsStatus.hasLabelPermission = normalizeToArray(permission[label]).includes(listing);
-
-                permissionsStatus.hasUserPermission = normalizeToArray(permission[users]).includes(listing);
-                permissionsStatus.hasUserAddPermission = normalizeToArray(permission[users]).includes(add)
-                permissionsStatus.hasUserEditPermission = normalizeToArray(permission[users]).includes(edit)
-                permissionsStatus.hasUserImportPermission = normalizeToArray(permission[users]).includes(import_data);
-
-                permissionsStatus.hasBranchPermission = normalizeToArray(permission[branch]).includes(listing);
-                permissionsStatus.hasBranchAddPermission = normalizeToArray(permission[branch]).includes(add)
-                permissionsStatus.hasBranchEditPermission = normalizeToArray(permission[branch]).includes(edit)
-
-                permissionsStatus.hasRegionPermission = normalizeToArray(permission[region]).includes(listing);
-                permissionsStatus.hasRegionAddPermission = normalizeToArray(permission[region]).includes(add)
-                permissionsStatus.hasRegionEditPermission = normalizeToArray(permission[region]).includes(edit)
-
-                permissionsStatus.hasZonePermission = normalizeToArray(permission[zone]).includes(listing);
-                permissionsStatus.hasZoneAddPermission = normalizeToArray(permission[zone]).includes(add);
-                permissionsStatus.hasZoneEditPermission = normalizeToArray(permission[zone]).includes(edit);
-
-                permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
-                permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
-                permissionsStatus.hasRoleEditPermission = normalizeToArray(permission[role]).includes(edit)
-
-                permissionsStatus.hasGroupAddPermission = normalizeToArray(permission[group]).includes(add)
-                permissionsStatus.hasGroupEditPermission = normalizeToArray(permission[group]).includes(edit)
-                permissionsStatus.hasGroupPermission = normalizeToArray(permission[group]).includes(listing)
-                permissionsStatus.hasGroupImportData = normalizeToArray(permission[group]).includes(import_data)
             } else {
                 isUser = true;
                 notUser = false;
