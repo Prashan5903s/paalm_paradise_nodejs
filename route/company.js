@@ -25,6 +25,8 @@ const apartmentController = require('../controller/Company/ApartmentController')
 const cameraController = require('../controller/Company/CameraController')
 const billController = require('../controller/Company/BillController')
 const paymentController = require('../controller/Company/PaymentController')
+const userBillController = require('../controller/Company/UserBillController')
+const complainController = require('../controller/Company/ComplainController')
 
 const createUpload = require('../util/upload');
 
@@ -219,5 +221,14 @@ router.put('/bill/update/:billId', isAuth, ...activityUpload.middleware('image')
 //This route is for payment
 router.get("/payment", isAuth, paymentController.getPaymentController)
 router.post('/payment', isAuth, paymentController.postPaymentController)
+
+//This route is for User Bill
+router.get('/user/bill/:billId', isAuth, userBillController.getUserBillController)
+router.post('/user/bill/data/payment', isAuth, userBillController.postUserBillController)
+
+//This route is for company
+router.get('/complain', isAuth, complainController.getComplainController)
+router.get('/complain/create', isAuth, complainController.createComplainController)
+router.post('/complain/data/:id/:code', isAuth, complainController.postComplainController)
 
 module.exports = router;

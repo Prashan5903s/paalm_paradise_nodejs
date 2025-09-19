@@ -10,6 +10,11 @@ const billSchema = new mongoose.Schema({
         ref: "apartments",
         default: null
     },
+    user_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        default: null
+    },
     bill_type: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "bill_type",
@@ -52,6 +57,7 @@ const billSchema = new mongoose.Schema({
     ],
     status: {
         type: Boolean,
+        default: false,
         default: false
     },
     created_by: {
@@ -76,5 +82,10 @@ billSchema.virtual("payments", {
 billSchema.set("toJSON", { virtuals: true });
 billSchema.set("toObject", { virtuals: true });
 
+billSchema.virtual("user_bills", {
+    ref: "user_bill",          // model name
+    localField: "_id",         // Bill._id
+    foreignField: "bill_id"    // UserBill.bill_id
+});
 
 module.exports = mongoose.model('Bill', billSchema)

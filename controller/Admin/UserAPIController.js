@@ -10,12 +10,22 @@ const { encryptDeterministic, hashSearchField } = require('../../util/encryption
 const { hash, normalizeEmail, normalizePhone } = require('../../util/encryption');
 const { successResponse, errorResponse, warningResponse } = require('../../util/response');
 
-const updateApartmentStatus = async (idArray) => {
+const updateApartmentStatus = async (idArray, userId) => {
     try {
+
+        // Step 1: Assign selected apartments
         await Apartment.updateMany(
-            { _id: { $in: idArray } }, // find apartments whose _id is in idArray
-            { $set: { status: true } } // update status to true
+            { _id: { $in: idArray } },
+            { $set: { assigned_to: userId, status: true } }
         );
+
+        // Step 2: Unassign apartments previously assigned to user but not in the new selection
+        await Apartment.updateMany(
+            { assigned_to: userId, _id: { $nin: idArray } },
+            { $set: { assigned_to: null, status: false } }
+        );
+        
+
     } catch (error) {
         console.error("Error updating apartments:", error);
     }
@@ -251,8 +261,6 @@ exports.createUserAPI = async (req, res, next) => {
             .map(item => item.apartment_id)
             .filter(Boolean); // removes undefined/null/empty
 
-        updateApartmentStatus(apartmentIds)
-
         // Normalize apartment_data robustly
         userData.apartment_data = normalizeApartmentData(req.body.apartment_data, req.body);
         userData.apartment_data = normalizeApartmentRowsShape(userData.apartment_data);
@@ -299,6 +307,8 @@ exports.createUserAPI = async (req, res, next) => {
         // Save
         const user = new User(userPayload);
         await user.save();
+
+        updateApartmentStatus(apartmentIds, user._id)
 
         // Roles: accept string or array
         const roles = Array.isArray(req.body.roles)
@@ -438,7 +448,7 @@ exports.updateUserAPI = async (req, res, next) => {
             .map(item => item.apartment_id)
             .filter(Boolean); // removes undefined/null/empty
 
-        updateApartmentStatus(apartmentIds)
+        updateApartmentStatus(apartmentIds, userId)
 
         // Ensure sip_extension present so Mongoose required doesn't fail (adjust to your schema expectations)
         if (!("sip_extension" in updateData) || updateData.sip_extension === undefined || updateData.sip_extension === null) {
@@ -668,7 +678,16 @@ exports.updatePasswordAPI = async (req, res, next) => {
 
 exports.deleteAPI = async (req, res, next) => {
     try {
-        const user = await User.findOne({ _id: req.params.id });
+
+        const user_id = req.params.id;
+
+        const user = await User.findOne({ _id: user_id });
+
+        await Apartment.findOneAndUpdate({ assigned_to: user_id }, {
+            status: false,
+            assigned_to: null
+        })
+
         if (!user) {
             return warningResponse(res, "User not found.", {}, 404);
         }

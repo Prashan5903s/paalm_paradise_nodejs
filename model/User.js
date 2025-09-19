@@ -52,6 +52,10 @@ const userSchema = new Schema({
         maxlength: 4000,
         required: false,
     },
+    package_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: false
+    },
     pincode: {
         type: String,
         required: false,
@@ -125,12 +129,12 @@ const userSchema = new Schema({
     ],
     qnap_username: {
         type: String,
-        required: true,
+        required: false,
         maxlength: 255,
     },
     qnap_password: {
         type: String,
-        required: true,
+        required: false,
         maxlength: 255,
     },
     sip_extension: {

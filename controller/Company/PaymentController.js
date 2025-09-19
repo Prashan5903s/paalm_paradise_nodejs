@@ -1,3 +1,4 @@
+const Bill = require('../../model/Bill')
 const Payment = require('../../model/Payment');
 const { successResponse } = require('../../util/response');
 
@@ -16,6 +17,8 @@ exports.postPaymentController = async (req, res, next) => {
 
         const { bank_name, amount, status, billId, payment_mode, paid_remark, cheque_no, cheque_date, demand_draft_no, demand_draft_date, neft_no, neft_date } = req.body
 
+        const bill = await Bill.findById(billId);
+
         const payment = new Payment({
             bank_name,
             created_by: userId,
@@ -32,6 +35,16 @@ exports.postPaymentController = async (req, res, next) => {
         })
 
         await payment.save();
+
+        if (bill) {
+            const totalAmount = bill?.bill_amount;
+            const payments = await Payment.find({ bill_id: billId })
+            const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+            const paid = Number(totalAmount) === Number(paidAmount);
+            await Bill.findByIdAndUpdate(billId, {
+                status: paid
+            })
+        }
 
         return successResponse(res, "Payment saved successfull")
 

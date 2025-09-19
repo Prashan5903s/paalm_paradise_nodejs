@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 const validation = require('../../util/validation')
 const user = require('../../model/User')
+const RoleUser = require('../../model/RoleUser')
 const packageType = require('../../model/PackageType')
 const PermissionModule = require('../../model/PermissionModule');
-const { errorResponse, successResponse } = require("../../util/response")
+const { errorResponse, successResponse } = require("../../util/response");
+const Role = require('../../model/Role');
 
 exports.getPermission = async (req, res, next) => {
     const userId = req.userId?.toString();
@@ -271,22 +273,23 @@ exports.getPermAllowAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        const listing = '681c58fb4cfdc0f1124c1748';
-        const edit = '681c58ee4cfdc0f1124c172d';
-        const add = '681c58e24cfdc0f1124c171b';
-        const import_data = '682d959a3cbed2993fc2c0ef';
+        const listing = '68cd0c88c2d476bd45382e0d';
+        const edit = '68bc229cab2e24f55ea586fa';
+        const status = "68cd0a88ce94fc785bb601c8"
+        const add = '68bc227eab2e24f55ea586ef';
+        const invoice = '68cd0c5fc2d476bd45382c6a';
+        const record_view = "68cd0cecc2d476bd45383621"
 
         const superAdminId = '68bc14b6b297142d6bfe639c';
-        const designation = '6853af54bf2b29d85a47cbf5';
-        const department = '6853af4bbf2b29d85a47cbd4'
-        const channel = '6853af38bf2b29d85a47cb41';
-        const label = '685394cabf2b29d85a47741e';
-        const role = '681c58bc4cfdc0f1124c170a';
-        const users = '681c58b04cfdc0f1124c1705';
-        const branch = '685394b1bf2b29d85a4773a3';
-        const region = '685394aabf2b29d85a47738e';
-        const zone = '6853946dbf2b29d85a477379';
-        const group = '686ceac86d9e7b6e1c8b66c7';
+        const role = '68cd0cb3c2d476bd453831ef';
+        const apartment = '68cd0b51ce94fc785bb63192';
+        const tower = '68cd0b44ce94fc785bb63184';
+        const users = '68bc226cab2e24f55ea586e7';
+        const billing = '68cd0742ce94fc785bb5fe75';
+        const visitor = '68cd07c8ce94fc785bb5fe83';
+        const complain = '68cd07f2ce94fc785bb5fe8a';
+        const floor = '68cd0b3dce94fc785bb63176';
+        const camera = '68cd3f185ab9c7e035f4cb04'
 
         let isSuperAdmin = false;
         let isCompany = false;
@@ -294,36 +297,45 @@ exports.getPermAllowAPI = async (req, res, next) => {
         let notUser = true;
 
         const permissionsStatus = {
-            hasZonePermission: false,
-            hasZoneAddPermission: false,
-            hasZoneEditPermission: false,
-            hasRegionPermission: false,
-            hasRegionAddPermission: false,
-            hasRegionEditPermission: false,
-            hasBranchPermission: false,
-            hasBranchAddPermission: false,
-            hasBranchEditPermission: false,
+
+            hasTowerPermission: false,
+            hasTowerAddPermission: false,
+            hasTowerEditPermission: false,
+
+            hasFlatPermission: false,
+            hasFlatAddPermission: false,
+            hasFlatEditPermission: false,
+
+            hasApartmentPermission: false,
+            hasApartmentAddPermission: false,
+            hasApartmentEditPermission: false,
+
             hasUserPermission: false,
+            hasUserStatusPermission: false,
             hasUserAddPermission: false,
             hasUserEditPermission: false,
-            hasLabelPermission: false,
-            hasUserImportPermission: false,
-            hasChannelPermission: false,
-            hasChannelAddPermission: false,
-            hasChannelEditPermission: false,
-            hasDepartmentPermission: false,
-            hasDepartmentAddPermission: false,
-            hasDepartmentlEditPermission: false,
-            hasDesignationPermission: false,
-            hasDesignationAddPermission: false,
-            hasDesignationEditPermission: false,
+
+            hasBillingPermission: false,
+            hasBillingAddPermission: false,
+            hasBillingEditPermission: false,
+            hasBillingInvoicePermission: false,
+            hasBillingViewPermission: false,
+
+            hasComplainPermission: false,
+            hasComplainAddPermission: false,
+            hasComplainEditPermission: false,
+            hasComplainRecordViewPermission: false,
+
+            hasVisitorPermission: false,
+            hasVisitorAddPermission: false,
+            hasVisitorEditPermission: false,
+
             hasRolePermission: false,
             hasRoleAddPermission: false,
             hasRoleEditPermission: false,
-            hasGroupPermission: false,
-            hasGroupAddPermission: false,
-            hasGroupEditPermission: false,
-            hasGroupImportData: false,
+
+            hasCameraPermission: false,
+
         };
 
         // If super admin, all permissions default to false (can be changed if needed)
@@ -368,47 +380,110 @@ exports.getPermAllowAPI = async (req, res, next) => {
 
                     const permission = matchedItem.permissions || {};
 
-                    permissionsStatus.hasDesignationPermission = normalizeToArray(permission[designation]).includes(listing);
-                    permissionsStatus.hasDesignationAddPermission = normalizeToArray(permission[designation]).includes(add);
-                    permissionsStatus.hasDesignationEditPermission = normalizeToArray(permission[designation]).includes(edit)
+                    permissionsStatus.hasTowerPermission = normalizeToArray(permission[tower]).includes(listing);
+                    permissionsStatus.hasTowerAddPermission = normalizeToArray(permission[tower]).includes(add);
+                    permissionsStatus.hasTowerEditPermission = normalizeToArray(permission[tower]).includes(edit)
 
-                    permissionsStatus.hasDepartmentPermission = normalizeToArray(permission[department]).includes(listing);
-                    permissionsStatus.hasDepartmentAddPermission = normalizeToArray(permission[department]).includes(add)
-                    permissionsStatus.hasDepartmentlEditPermission = normalizeToArray(permission[department]).includes(edit)
+                    permissionsStatus.hasFloorPermission = normalizeToArray(permission[floor]).includes(listing);
+                    permissionsStatus.hasFloorAddPermission = normalizeToArray(permission[floor]).includes(add)
+                    permissionsStatus.hasFloorEditPermission = normalizeToArray(permission[floor]).includes(edit)
 
-                    permissionsStatus.hasChannelPermission = normalizeToArray(permission[channel]).includes(listing);
-                    permissionsStatus.hasChannelAddPermission = normalizeToArray(permission[channel]).includes(add);
-                    permissionsStatus.hasChannelEditPermission = normalizeToArray(permission[channel]).includes(edit);
-
-                    permissionsStatus.hasLabelPermission = normalizeToArray(permission[label]).includes(listing);
+                    permissionsStatus.hasApartmentPermission = normalizeToArray(permission[apartment]).includes(listing);
+                    permissionsStatus.hasApartmentAddPermission = normalizeToArray(permission[apartment]).includes(add);
+                    permissionsStatus.hasApartmentEditPermission = normalizeToArray(permission[apartment]).includes(edit);
 
                     permissionsStatus.hasUserPermission = normalizeToArray(permission[users]).includes(listing);
                     permissionsStatus.hasUserAddPermission = normalizeToArray(permission[users]).includes(add)
                     permissionsStatus.hasUserEditPermission = normalizeToArray(permission[users]).includes(edit)
-                    permissionsStatus.hasUserImportPermission = normalizeToArray(permission[users]).includes(import_data);
+                    permissionsStatus.hasUserStatusPermission = normalizeToArray(permission[users]).includes(status);
 
-                    permissionsStatus.hasBranchPermission = normalizeToArray(permission[branch]).includes(listing);
-                    permissionsStatus.hasBranchAddPermission = normalizeToArray(permission[branch]).includes(add)
-                    permissionsStatus.hasBranchEditPermission = normalizeToArray(permission[branch]).includes(edit)
+                    permissionsStatus.hasBillingPermission = normalizeToArray(permission[billing]).includes(listing);
+                    permissionsStatus.hasBillingAddPermission = normalizeToArray(permission[billing]).includes(add)
+                    permissionsStatus.hasBillingEditPermission = normalizeToArray(permission[billing]).includes(edit)
+                    permissionsStatus.hasBillingInvoicePermission = normalizeToArray(permission[billing]).includes(invoice)
+                    permissionsStatus.hasBillingViewPermission = normalizeToArray(permission[billing]).includes(record_view)
 
-                    permissionsStatus.hasRegionPermission = normalizeToArray(permission[region]).includes(listing);
-                    permissionsStatus.hasRegionAddPermission = normalizeToArray(permission[region]).includes(add)
-                    permissionsStatus.hasRegionEditPermission = normalizeToArray(permission[region]).includes(edit)
+                    permissionsStatus.hasComplainPermission = normalizeToArray(permission[complain]).includes(listing);
+                    permissionsStatus.hasComplainAddPermission = normalizeToArray(permission[complain]).includes(add)
+                    permissionsStatus.hasComplainEditPermission = normalizeToArray(permission[complain]).includes(edit)
+                    permissionsStatus.hasComplainRecordViewPermission = normalizeToArray(permission[complain]).includes(record_view)
 
-                    permissionsStatus.hasZonePermission = normalizeToArray(permission[zone]).includes(listing);
-                    permissionsStatus.hasZoneAddPermission = normalizeToArray(permission[zone]).includes(add);
-                    permissionsStatus.hasZoneEditPermission = normalizeToArray(permission[zone]).includes(edit);
+                    permissionsStatus.hasVisitorPermission = normalizeToArray(permission[visitor]).includes(listing)
+                    permissionsStatus.hasVisitorAddPermission = normalizeToArray(permission[visitor]).includes(add)
+                    permissionsStatus.hasVisitorEditPermission = normalizeToArray(permission[visitor]).includes(edit)
 
                     permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
                     permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
                     permissionsStatus.hasRoleEditPermission = normalizeToArray(permission[role]).includes(edit)
 
-                    permissionsStatus.hasGroupAddPermission = normalizeToArray(permission[group]).includes(add)
-                    permissionsStatus.hasGroupEditPermission = normalizeToArray(permission[group]).includes(edit)
-                    permissionsStatus.hasGroupPermission = normalizeToArray(permission[group]).includes(listing)
-                    permissionsStatus.hasGroupImportData = normalizeToArray(permission[group]).includes(import_data)
                 }
             } else {
+                const roles = await RoleUser.find({ user_id: userId }).select("role_id");
+
+                const roleIds = roles.map(r => r.role_id);
+
+                const roleDocs = await Role.find({ _id: { $in: roleIds } }).lean();
+
+                // merged permissions object
+                const mergedPermissions = {};
+
+                for (const role of roleDocs) {
+                    if (!role.permissions) continue;
+
+                    // iterate object instead of Map
+                    for (const [key, values] of Object.entries(role.permissions)) {
+                        if (!mergedPermissions[key]) {
+                            mergedPermissions[key] = new Set();
+                        }
+
+                        values.forEach(v => mergedPermissions[key].add(v.toString())); // ensure uniqueness
+                    }
+                }
+
+                // convert sets back to arrays
+                const finalPermissions = {};
+                for (const key in mergedPermissions) {
+                    finalPermissions[key] = Array.from(mergedPermissions[key]);
+                }
+
+                permissionsStatus.hasTowerPermission = normalizeToArray(finalPermissions[tower]).includes(listing);
+                permissionsStatus.hasTowerAddPermission = normalizeToArray(finalPermissions[tower]).includes(add);
+                permissionsStatus.hasTowerEditPermission = normalizeToArray(finalPermissions[tower]).includes(edit)
+
+                permissionsStatus.hasFloorPermission = normalizeToArray(finalPermissions[floor]).includes(listing);
+                permissionsStatus.hasFloorAddPermission = normalizeToArray(finalPermissions[floor]).includes(add)
+                permissionsStatus.hasFloorEditPermission = normalizeToArray(finalPermissions[floor]).includes(edit)
+
+                permissionsStatus.hasApartmentPermission = normalizeToArray(finalPermissions[apartment]).includes(listing);
+                permissionsStatus.hasApartmentAddPermission = normalizeToArray(finalPermissions[apartment]).includes(add);
+                permissionsStatus.hasApartmentEditPermission = normalizeToArray(finalPermissions[apartment]).includes(edit);
+
+                permissionsStatus.hasUserPermission = normalizeToArray(finalPermissions[users]).includes(listing);
+                permissionsStatus.hasUserAddPermission = normalizeToArray(finalPermissions[users]).includes(add)
+                permissionsStatus.hasUserEditPermission = normalizeToArray(finalPermissions[users]).includes(edit)
+                permissionsStatus.hasUserStatusPermission = normalizeToArray(finalPermissions[users]).includes(status);
+
+                permissionsStatus.hasBillingPermission = normalizeToArray(finalPermissions[billing]).includes(listing);
+                permissionsStatus.hasBillingAddPermission = normalizeToArray(finalPermissions[billing]).includes(add)
+                permissionsStatus.hasBillingEditPermission = normalizeToArray(finalPermissions[billing]).includes(edit)
+                permissionsStatus.hasBillingInvoicePermission = normalizeToArray(finalPermissions[billing]).includes(invoice)
+                permissionsStatus.hasBillingViewPermission = normalizeToArray(finalPermissions[billing]).includes(record_view)
+
+                permissionsStatus.hasComplainPermission = normalizeToArray(finalPermissions[complain]).includes(listing);
+                permissionsStatus.hasComplainAddPermission = normalizeToArray(finalPermissions[complain]).includes(add)
+                permissionsStatus.hasComplainEditPermission = normalizeToArray(finalPermissions[complain]).includes(edit)
+                permissionsStatus.hasComplainRecordViewPermission = normalizeToArray(finalPermissions[complain]).includes(record_view)
+
+                permissionsStatus.hasVisitorPermission = normalizeToArray(finalPermissions[visitor]).includes(listing)
+                permissionsStatus.hasVisitorAddPermission = normalizeToArray(finalPermissions[visitor]).includes(add)
+                permissionsStatus.hasVisitorEditPermission = normalizeToArray(finalPermissions[visitor]).includes(edit)
+
+                permissionsStatus.hasRolePermission = normalizeToArray(finalPermissions[role]).includes(listing)
+                permissionsStatus.hasRoleAddPermission = normalizeToArray(finalPermissions[role]).includes(add)
+                permissionsStatus.hasRoleEditPermission = normalizeToArray(finalPermissions[role]).includes(edit)
+
+                permissionsStatus.hasCameraPermission = normalizeToArray(finalPermissions[camera]).includes(listing)
+
                 isUser = true;
                 notUser = false;
             }

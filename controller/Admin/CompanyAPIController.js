@@ -70,7 +70,7 @@ exports.postCompanyAPI = async (req, res, next) => {
         const {
             first_name, last_name, company_name, email, password,
             country_id, state_id, city_id, address, status,
-            phone, website, package_id, pincode, gst_no, pan_no
+            phone, website, package_id, pincode, gst_no, pan_no,
         } = req.body;
 
         // Optional: hash password

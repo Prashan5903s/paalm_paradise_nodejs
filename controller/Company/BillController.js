@@ -1,6 +1,8 @@
 const Apartment = require('../../model/Apartment')
 const Bill = require('../../model/Bill')
 const BillType = require('../../model/BillType')
+const User = require('../../model/User')
+const UserBill = require('../../model/UserBill')
 const { errorResponse, successResponse } = require('../../util/response')
 
 exports.getBillData = async (req, res, next) => {
@@ -33,7 +35,12 @@ exports.getCreateBill = async (req, res, next) => {
 
         const data = {};
 
-        const apartment = await Apartment.find({ created_by: userId });
+        const apartment = await Apartment.find({
+            created_by: userId,
+            status: true,
+            assigned_to: { $exists: true, $ne: null }
+        });
+
         const billType = await BillType.find();
 
         if (!apartment || !billType) {
@@ -52,7 +59,6 @@ exports.getCreateBill = async (req, res, next) => {
 
 exports.postBillController = async (req, res, next) => {
     try {
-
         const userId = req.userId;
 
         let {
@@ -63,39 +69,80 @@ exports.postBillController = async (req, res, next) => {
             bill_due_date,
             payment_due_date,
             month,
-            addtional_cost,
+            additional_cost, // ✅ fixed naming
             type,
             year
         } = req.body;
 
+        if (type !== "utilityBills" && type !== "common-area-bill" && type !== 'maintenance') {
+            return errorResponse(res, "Type does not exist", {}, 404);
+        }
+
         const file = req.file;
 
-        //  Parse additional_cost if it comes as a string
-        if (addtional_cost && typeof addtional_cost === "string") {
-            try {
-                addtional_cost = JSON.parse(addtional_cost);
-            } catch (e) {
-                addtional_cost = [];
+        let user_id = null;
+
+        // If bill is linked to a single apartment
+        if (apartment_id) {
+            const apartment = await Apartment.findById(apartment_id);
+            if (apartment) {
+                user_id = apartment.assigned_to;
             }
         }
 
+        // ✅ Normalize additional_cost (always array)
+        if (additional_cost) {
+            if (typeof additional_cost === "string") {
+                try {
+                    additional_cost = JSON.parse(additional_cost);
+                } catch (e) {
+                    additional_cost = [];
+                }
+            }
+        } else {
+            additional_cost = [];
+        }
+
+        // ✅ Create Bill
         const bill = new Bill({
             bill_data_type: type,
+            user_id,
             apartment_id: apartment_id || null,
             bill_type: bill_type || null,
             bill_amount,
             bill_date,
             bill_due_date,
-            doc_data: file?.filename,
+            doc_data: file?.filename || null,
             payment_due_date,
             month,
             year,
-            additional_cost: addtional_cost,
+            additional_cost,
             created_by: userId
         });
 
         await bill.save();
-        return successResponse(res, "Bill created successfully");
+
+        // ✅ If type = 2 or 3, auto-create UserBills
+        if (type == "common-area-bill" || type == 'maintenance') {
+            const users = await User.find({ created_by: userId }).select('_id');
+            const userIds = users.map(user => user._id);
+
+            const apartments = await Apartment.find({ assigned_to: { $in: userIds } });
+
+            await Promise.all(
+                apartments.map(item => {
+                    const userBill = new UserBill({
+                        apartment_id: item._id,
+                        user_id: item.assigned_to,
+                        bill_id: bill._id,
+                        created_by: userId
+                    });
+                    return userBill.save();
+                })
+            );
+        }
+
+        return successResponse(res, "Bill created successfully", { bill });
     } catch (error) {
         next(error);
     }
@@ -128,6 +175,10 @@ exports.putBillController = async (req, res, next) => {
             year
         } = req.body;
 
+        if (type !== "utilityBills" && type !== "common-area-bill" && type !== 'maintenance') {
+            return errorResponse(res, "Type does not exist", {}, 404);
+        }
+
         //  Parse additional_cost same as in POST
         if (addtional_cost && typeof addtional_cost === "string") {
             try {
@@ -135,6 +186,13 @@ exports.putBillController = async (req, res, next) => {
             } catch (e) {
                 addtional_cost = [];
             }
+        }
+
+        let user_id = null;
+
+        if (apartment_id) {
+            const apartment = await Apartment.findById(apartment_id);
+            user_id = apartment.assigned_to;
         }
 
         await Bill.findByIdAndUpdate(
@@ -145,6 +203,7 @@ exports.putBillController = async (req, res, next) => {
                 bill_type: bill_type || null,
                 bill_amount,
                 bill_date,
+                user_id,
                 bill_due_date,
                 payment_due_date,
                 month,
