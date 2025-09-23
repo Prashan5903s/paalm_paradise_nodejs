@@ -159,7 +159,7 @@ exports.editCompanyAPI = async (req, res, next) => {
 
 exports.putCompanyAPI = async (req, res, next) => {
     try {
-        const userId = req.userId;
+        const userId = req.userId; 
         const id = req.params.id;
 
         const data = await User.findOne({ created_by: userId, _id: id });

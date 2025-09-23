@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Counter = require('../model/Counter')
 
 const UserBillSchema = new mongoose.Schema({
     bill_id: {
@@ -15,6 +16,10 @@ const UserBillSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: "users"
+    },
+    receipt_no: {
+        type: String,
+        unique: true
     },
     amount: {
         type: Number,
@@ -55,6 +60,28 @@ const UserBillSchema = new mongoose.Schema({
         required: false,
     }
 })
+
+UserBillSchema.pre('save', async function (next) {
+    if (this.receipt_no) return next(); // Already set
+
+    // Get next sequence
+    const counter = await Counter.findByIdAndUpdate(
+        'receipt',
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+
+    const seq = counter.seq;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+    const seqPadded = String(seq).padStart(6, '0');
+
+    this.receipt_no = `RCPT-${dateStr}-${seqPadded}`;
+    next();
+});
 
 UserBillSchema.virtual("bill", {
     ref: "Bill",

@@ -1,7 +1,10 @@
 const Apartment = require('../../model/Apartment')
 const UserBill = require('../../model/UserBill');
+const Bill = require('../../model/Bill')
+const Counter = require('../../model/Counter')
 const Maintenance = require('../../model/Maintenance')
 const mongoose = require('mongoose')
+
 const { errorResponse, successResponse } = require('../../util/response');
 
 exports.getUserBillController = async (req, res, next) => {
@@ -144,57 +147,44 @@ exports.postUserBillController = async (req, res, next) => {
             neft_date,
         } = req.body;
 
-        // check if already exists
-        let userBill = await UserBill.findOne({ bill_id: billId, apartment_id });
+        const apartment = await Apartment.findById(apartment_id);
 
-        if (!userBill) {
-            // find the apartment to get assigned user
-            const apartment = await Apartment.findById(apartment_id);
-            if (!apartment) {
-                return warningResponse(res, "Apartment not found.", {}, 404);
-            }
+        if (!apartment) {
+            return warningResponse(res, "Apartment not found.", {}, 404);
+        }
 
-            const user_id = apartment.assigned_to;
+        const user_id = apartment.assigned_to;
 
-            userBill = new UserBill({
-                bank_name,
-                amount: Number(amount),
-                cheque_no,
-                apartment_id,
-                user_id,
-                created_by: userId,
-                bill_id: billId,
-                cheque_date,
-                payment_mode,
-                demand_draft_no,
-                paid_remark,
-                demand_draft_date,
-                neft_no,
-                neft_date,
-                status,
-            });
+        const bill = await Bill.findById(billId);
 
-            await userBill.save();
-        } else {
-            // update existing amount by adding
-            const userBillAmount = Number(userBill.amount) + Number(amount);
+        const userBill = new UserBill({
+            bank_name,
+            amount: Number(amount),
+            cheque_no,
+            apartment_id,
+            user_id,
+            created_by: userId,
+            bill_id: billId,
+            cheque_date,
+            payment_mode,
+            demand_draft_no,
+            paid_remark,
+            demand_draft_date,
+            neft_no,
+            neft_date,
+            status,
+        });
 
-            await UserBill.findOneAndUpdate(
-                { bill_id: billId, apartment_id },
-                {
-                    bank_name,
-                    amount: userBillAmount,
-                    cheque_no,
-                    cheque_date,
-                    payment_mode,
-                    demand_draft_no,
-                    paid_remark,
-                    demand_draft_date,
-                    neft_no,
-                    neft_date,
-                    status,
-                }
-            );
+        await userBill.save();
+
+        if (bill) {
+            const totalAmount = bill?.bill_amount;
+            const payments = await UserBill.find({ bill_id: billId, user_id: user_id, apartment_id })
+            const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
+            const paid = Number(totalAmount) === Number(paidAmount);
+            await Bill.findByIdAndUpdate(billId, {
+                status: paid
+            })
         }
 
         return successResponse(res, "Payment done successfully");
