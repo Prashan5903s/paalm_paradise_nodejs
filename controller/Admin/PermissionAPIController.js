@@ -281,6 +281,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
         const record_view = "68cd0cecc2d476bd45383621"
 
         const superAdminId = '68bc14b6b297142d6bfe639c';
+        const ticketId = "68d22d6718430e2129859697";
         const role = '68cd0cb3c2d476bd453831ef';
         const apartment = '68cd0b51ce94fc785bb63192';
         const tower = '68cd0b44ce94fc785bb63184';
@@ -335,6 +336,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
             hasRoleEditPermission: false,
 
             hasCameraPermission: false,
+
+            hasTicketPermission: false,
 
         };
 
@@ -416,6 +419,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
                     permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
                     permissionsStatus.hasRoleEditPermission = normalizeToArray(permission[role]).includes(edit)
 
+                    permissionsStatus.hasTicketPermission = normalizeToArray(permission[ticketId]).includes(listing);
+
                 }
             } else {
                 const roles = await RoleUser.find({ user_id: userId }).select("role_id");
@@ -483,6 +488,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
                 permissionsStatus.hasRoleEditPermission = normalizeToArray(finalPermissions[role]).includes(edit)
 
                 permissionsStatus.hasCameraPermission = normalizeToArray(finalPermissions[camera]).includes(listing)
+
+                permissionsStatus.hasTicketPermission = normalizeToArray(finalPermissions[ticketId]).includes(listing);
 
                 isUser = true;
                 notUser = false;

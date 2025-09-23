@@ -63,7 +63,11 @@ exports.postVisitorController = async (req, res, next) => {
         if (!apartment_id) {
 
             const apartments = await Apartment.findOne({ assigned_to: userId })
-            apartmentId = apartments._id
+            if (!apartments) {
+                return errorResponse(res, "User has no apartment assigned", {}, 500)
+            } else {
+                apartmentId = apartments._id
+            }
 
         } else {
             apartmentId = apartment_id;
