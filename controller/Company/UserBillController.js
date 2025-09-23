@@ -155,8 +155,6 @@ exports.postUserBillController = async (req, res, next) => {
 
         const user_id = apartment.assigned_to;
 
-        const bill = await Bill.findById(billId);
-
         const userBill = new UserBill({
             bank_name,
             amount: Number(amount),
@@ -176,16 +174,6 @@ exports.postUserBillController = async (req, res, next) => {
         });
 
         await userBill.save();
-
-        if (bill) {
-            const totalAmount = bill?.bill_amount;
-            const payments = await UserBill.find({ bill_id: billId, user_id: user_id, apartment_id })
-            const paidAmount = payments.reduce((sum, p) => sum + p.amount, 0);
-            const paid = Number(totalAmount) === Number(paidAmount);
-            await Bill.findByIdAndUpdate(billId, {
-                status: paid
-            })
-        }
 
         return successResponse(res, "Payment done successfully");
     } catch (error) {

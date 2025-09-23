@@ -61,6 +61,8 @@ exports.postBillController = async (req, res, next) => {
     try {
         const userId = req.userId;
 
+        let additional_cost;
+
         let {
             apartment_id,
             bill_type,
@@ -69,7 +71,7 @@ exports.postBillController = async (req, res, next) => {
             bill_due_date,
             payment_due_date,
             month,
-            additional_cost, // ✅ fixed naming
+            addtional_cost, // ✅ fixed naming
             type,
             year
         } = req.body;
@@ -91,16 +93,16 @@ exports.postBillController = async (req, res, next) => {
         }
 
         // ✅ Normalize additional_cost (always array)
-        if (additional_cost) {
-            if (typeof additional_cost === "string") {
+        if (addtional_cost) {
+            if (typeof addtional_cost === "string") {
                 try {
-                    additional_cost = JSON.parse(additional_cost);
+                    additional_cost = JSON.parse(addtional_cost);
                 } catch (e) {
-                    additional_cost = [];
+                    additional_cost = addtional_cost;
                 }
             }
         } else {
-            additional_cost = [];
+            additional_cost = addtional_cost
         }
 
         // ✅ Create Bill
