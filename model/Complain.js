@@ -1,10 +1,15 @@
 const mongoose = require('mongoose')
+const Counter = require('../model/Counter')
 
 const complainSchema = new mongoose.Schema({
     happy_code: {
         type: Number,
         required: true,
         maxLength: 6
+    },
+    complain_no: {
+        type: String,
+        uinque: false
     },
     assigned_to: {
         user: {
@@ -54,5 +59,23 @@ const complainSchema = new mongoose.Schema({
         required: false
     }
 })
+
+complainSchema.pre('save', async function (next) {
+
+    if (this.complain_no) return next(); // Already set
+
+    // Get next sequence
+    const counter = await Counter.findByIdAndUpdate(
+        'receipt',
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+
+    const seq = counter.seq;
+    const seqPadded = String(seq).padStart(2, '0');
+
+    this.complain_no = `101${seqPadded}`;
+    next();
+});
 
 module.exports = mongoose.model('complain', complainSchema)
