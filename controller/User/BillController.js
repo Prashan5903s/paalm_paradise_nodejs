@@ -13,11 +13,14 @@ exports.getBillController = async (req, res, next) => {
 
         const userId = req.userId
         const type = req.params.type;
-        const status = req.params.status || false;
+
+        const user = await User.findById(userId)
+
+        const masterId = user?.created_by;
 
         if (type == 'common-area-bill') {
 
-            const bills = await Bill.find({ status: statusField, bill_data_type: type }).populate('apartment_id').populate('bill_type').populate({
+            const bills = await Bill.find({ status: statusField, bill_data_type: type, created_by: masterId }).populate('apartment_id').populate('bill_type').populate({
                 path: "payments",
                 model: "Payment"
             });
@@ -48,7 +51,7 @@ exports.getBillController = async (req, res, next) => {
 
         } else {
 
-            data = await Bill.find({ user_id: userId, status: statusField, bill_data_type: type }).populate('apartment_id').populate('bill_type').populate({
+            data = await Bill.find({ created_by: masterId, status: statusField, bill_data_type: type }).populate('apartment_id').populate('bill_type').populate({
                 path: "payments",
                 model: "Payment"
             })

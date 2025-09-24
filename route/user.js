@@ -5,6 +5,7 @@ const BillController = require('../controller/User/BillController')
 const ComplainController = require('../controller/User/MyComplainController')
 const visitorController = require('../controller/User/VisitorController')
 const complainResolvedController = require('../controller/User/ComplainResolvedController')
+const dashboardController = require('../controller/User/DashboardController')
 
 //This route is for bill
 router.get('/my-bill/:type/:status', isAuth, BillController.getBillController)
@@ -24,5 +25,8 @@ router.post('/visitor', isAuth, visitorController.postVisitorController)
 router.get('/visitor/create/data', isAuth, visitorController.createVisitorController)
 router.put('/visitor/update/:id', isAuth, visitorController.putVisitiorController)
 router.get('/visitor/allow/gateIn/:id', isAuth, visitorController.allowGateInFunc)
+
+//This route is for dashboard user data
+router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
 
 module.exports = router;
