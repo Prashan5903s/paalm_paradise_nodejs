@@ -3,6 +3,7 @@ const Bill = require('../../model/Bill')
 const Complain = require('../../model/Complain')
 const User = require('../../model/User')
 const Visitor = require('../../model/Visitor')
+const mongoose = require('mongoose')
 const UserBill = require('../../model/UserBill')
 const Maintenance = require('../../model/Maintenance')
 const { successResponse, errorResponse } = require('../../util/response')
@@ -18,9 +19,38 @@ exports.getDashboardDataAPI = async (req, res, next) => {
 
         const camera = user.cameras;
 
-        const pendingComplain = await Complain.find({ created_by: userId, complain_status: "1" })
-        const inProgressComplain = await Complain.find({ created_by: userId, complain_status: "4" })
-        const resolvedComplain = await Complain.find({ created_by: userId, complain_status: "3" })
+        async function getComplainsByStatus(userId, status) {
+            return await Complain.aggregate([
+                {
+                    $match: { created_by: new mongoose.Types.ObjectId(userId) }
+                },
+                {
+                    $lookup: {
+                        from: "complain_users",
+                        let: { complainId: "$_id" },
+                        pipeline: [
+                            {
+                                $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
+                            },
+                            { $sort: { created_at: -1 } }, // latest first
+                            { $limit: 1 } // केवल latest record
+                        ],
+                        as: "latest_complain_user"
+                    }
+                },
+                {
+                    $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
+                },
+                {
+                    $match: { "latest_complain_user.complaint_status": status }
+                }
+            ]);
+        }
+
+        // ✅ Use like this:
+        const pendingComplain = await getComplainsByStatus(userId, "1");   // pending
+        const inProgressComplain = await getComplainsByStatus(userId, "4"); // in-progress
+        const resolvedComplain = await getComplainsByStatus(userId, "3");   // resolved
 
         const paidCommanAreaBill = await Bill.find({ status: true, bill_data_type: "common-area-bill", created_by: masterId }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
