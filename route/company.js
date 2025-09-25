@@ -12,6 +12,8 @@ const paymentController = require('../controller/Company/PaymentController')
 const userBillController = require('../controller/Company/UserBillController')
 const complainController = require('../controller/Company/ComplainController')
 const dashboardController = require('../controller/Company/DashboardController')
+const noticeController = require('../controller/Company/NoticeController')
+const eventController = require('../controller/Company/EventController')
 
 
 const createUpload = require('../util/upload');
@@ -81,5 +83,17 @@ router.post('/complain/data/:id/:code', isAuth, complainController.postComplainC
 
 //This route is for dashboard
 router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
+
+//This route is for notice
+router.get('/notice', isAuth, noticeController.getNoticeAPIController)
+router.get('/notice/create', isAuth, noticeController.createNoticeAPI)
+router.post('/notice', isAuth, noticeController.postNoticeController)
+router.put('/notice/update/:id', isAuth, noticeController.updateNoticeAPIController)
+
+//This route is for event
+router.get('/event', isAuth, eventController.getEventAPIController)
+router.get('/event/create', isAuth, eventController.createEventController)
+router.post('/event', isAuth, eventController.postEventControllerAPI)
+router.put('/event/update/:id', isAuth, eventController.updateEventControllerAPI)
 
 module.exports = router;
