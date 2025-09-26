@@ -31,7 +31,10 @@ exports.getBillController = async (req, res, next) => {
 
             let datas = {}
 
-            const userBill = await UserBill.find({ user_id: userId })
+            const bills = await Bill.find({ status: statusField, bill_data_type: type, created_by: masterId }).select('_id');
+            const billsId = bills.map(b => b._id.toString())
+
+            const userBill = await UserBill.find({ user_id: userId, bill_id: { $in: billsId } })
                 .populate('bill_id')
                 .populate('apartment_id').populate('user_id')
 
