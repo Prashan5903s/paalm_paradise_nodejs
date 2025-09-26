@@ -58,7 +58,6 @@ const billSchema = new mongoose.Schema({
     status: {
         type: Boolean,
         default: false,
-        default: false
     },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,

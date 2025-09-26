@@ -9,7 +9,7 @@ const complainSchema = new mongoose.Schema({
     },
     complain_no: {
         type: String,
-        uinque: false
+        uinque: true
     },
     assigned_to: {
         user: {
