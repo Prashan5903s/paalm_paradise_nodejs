@@ -6,7 +6,8 @@ const ComplainController = require('../controller/User/MyComplainController')
 const visitorController = require('../controller/User/VisitorController')
 const complainResolvedController = require('../controller/User/ComplainResolvedController')
 const dashboardController = require('../controller/User/DashboardController')
-const noticeController = require('../controller/Company/NoticeController')
+const noticeController = require('../controller/User/NoticeController')
+const eventController = require('../controller/User/EventController')
 
 //This route is for bill
 router.get('/my-bill/:type/:status', isAuth, BillController.getBillController)
@@ -31,6 +32,9 @@ router.get('/visitor/allow/gateIn/:id', isAuth, visitorController.allowGateInFun
 router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
 
 //This route is for notice
-router.get('/notice', isAuth, noticeController.getNoticeAPIController)
+router.get('/notice', isAuth, noticeController.getNoticeController)
+
+//This route is for event
+router.get('/event', isAuth, eventController.getEventListAPIController)
 
 module.exports = router;
