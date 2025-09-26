@@ -110,7 +110,10 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                 ]
             });
 
-        const userBill = await UserBill.find({ user_id: { $in: userIds } })
+        const bills = await Bill.find({ bill_data_type: "maintenance", created_by: userId }).select('_id');
+        const billsId = bills.map(b => b._id.toString())
+
+        const userBill = await UserBill.find({ user_id: { $in: userIds }, bill_id: { $in: billsId } })
             .populate('bill_id')
             .populate('apartment_id')
             .populate('user_id')
