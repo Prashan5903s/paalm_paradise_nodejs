@@ -1,12 +1,41 @@
-const { response } = require('express')
 const Bill = require('../../model/Bill')
 const Complain = require('../../model/Complain')
 const User = require('../../model/User')
 const Visitor = require('../../model/Visitor')
+const RoleUser = require('../../model/RoleUser')
+const Notice = require('../../model/Notice')
 const mongoose = require('mongoose')
 const UserBill = require('../../model/UserBill')
 const Maintenance = require('../../model/Maintenance')
 const { successResponse, errorResponse } = require('../../util/response')
+
+async function getComplainsByStatus(userId, status) {
+    return await Complain.aggregate([
+        {
+            $match: { created_by: new mongoose.Types.ObjectId(userId) }
+        },
+        {
+            $lookup: {
+                from: "complain_users",
+                let: { complainId: "$_id" },
+                pipeline: [
+                    {
+                        $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
+                    },
+                    { $sort: { created_at: -1 } }, // latest first
+                    { $limit: 1 } // केवल latest record
+                ],
+                as: "latest_complain_user"
+            }
+        },
+        {
+            $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
+        },
+        {
+            $match: { "latest_complain_user.complaint_status": status }
+        }
+    ]);
+}
 
 exports.getDashboardDataAPI = async (req, res, next) => {
     try {
@@ -19,35 +48,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
 
         const camera = user.cameras;
 
-        async function getComplainsByStatus(userId, status) {
-            return await Complain.aggregate([
-                {
-                    $match: { created_by: new mongoose.Types.ObjectId(userId) }
-                },
-                {
-                    $lookup: {
-                        from: "complain_users",
-                        let: { complainId: "$_id" },
-                        pipeline: [
-                            {
-                                $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
-                            },
-                            { $sort: { created_at: -1 } }, // latest first
-                            { $limit: 1 } // केवल latest record
-                        ],
-                        as: "latest_complain_user"
-                    }
-                },
-                {
-                    $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
-                },
-                {
-                    $match: { "latest_complain_user.complaint_status": status }
-                }
-            ]);
-        }
-
-        // ✅ Use like this:
+        // Use like this:
         const pendingComplain = await getComplainsByStatus(userId, "1");   // pending
         const inProgressComplain = await getComplainsByStatus(userId, "4"); // in-progress
         const resolvedComplain = await getComplainsByStatus(userId, "3");   // resolved
@@ -65,7 +66,6 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             path: "payments",
             model: "Payment"
         });
-
         const paidUtilityBill = await Bill.find({ user_id: userId, status: true, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
             model: "Payment"
@@ -108,7 +108,16 @@ exports.getDashboardDataAPI = async (req, res, next) => {
 
         const fixedCost = maintenance.fixed_data;
 
-        if (!camera || !fixedCost || !maintenance || !userBill || !visitor || !unpaidCommanAreaBill || !paidCommanAreaBill || !paidUtilityBill || !unpaidUtilityBill, !pendingComplain || !resolvedComplain) {
+        const roleUser = await RoleUser.find({ user_id: userId }).select('role_id')
+
+        const roleIds = roleUser.map(r => (r.role_id))
+
+        const notice = await Notice.find({
+            created_by: masterId,
+            role_id: { $elemMatch: { $in: (roleIds) } }
+        });
+
+        if (!camera || !fixedCost || !maintenance || !userBill || !visitor || !unpaidCommanAreaBill || !paidCommanAreaBill || !paidUtilityBill || !unpaidUtilityBill, !pendingComplain || !resolvedComplain || !user || !roleUser || !notice) {
             return errorResponse(res, "Data does not exist", {}, 404)
         }
 
@@ -124,7 +133,8 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             unpaidCommanAreaBill,
             paidUtilityBill,
             unpaidUtilityBill,
-            utilityBill
+            utilityBill,
+            notice
         }
 
         return successResponse(res, "Dashboard data fetched successfully", finalData)

@@ -3,6 +3,7 @@ const User = require('../../model/User')
 const Tower = require('../../model/Tower')
 const Visitor = require('../../model/Visitor')
 const UserBill = require('../../model/UserBill')
+const Notice = require('../../model/Notice')
 const Maintenance = require("../../model/Maintenance")
 const Complain = require('../../model/Complain')
 const Apartment = require('../../model/Apartment');
@@ -122,7 +123,11 @@ exports.getDashboardDataAPI = async (req, res, next) => {
 
         const fixedCost = maintenance.fixed_data;
 
-        if (!fixedCost || !maintenance || !userBill || !visitor || !tower || !apartment || !unsoldApartment || !owner || !pendingComplain || !resolvedComplain || !inProgressComplain || !paidCommanAreaBill || !unpaidCommanAreaBill || !unpaidUtilityBill || !paidUtilityBill || !utilityBill) {
+        const notice = await Notice.find({
+            created_by: userId,
+        });
+
+        if (!fixedCost || !maintenance || !userBill || !visitor || !tower || !apartment || !unsoldApartment || !owner || !pendingComplain || !resolvedComplain || !inProgressComplain || !paidCommanAreaBill || !unpaidCommanAreaBill || !unpaidUtilityBill || !paidUtilityBill || !utilityBill || !notice) {
             return errorResponse(res, "Dashboard data does not exist", {}, 404)
         }
 
@@ -142,7 +147,8 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             unpaidCommanAreaBill,
             paidUtilityBill,
             unpaidUtilityBill,
-            utilityBill
+            utilityBill,
+            notice
         }
 
         return successResponse(res, "Dashboard data does not exist", data)
