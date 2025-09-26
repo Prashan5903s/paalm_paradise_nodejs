@@ -7,7 +7,7 @@ exports.getFloorAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const floor = await Floor.find({ created_by: userId }).populate('tower_id')
+        const floor = await Floor.find({ created_by: userId }).sort({ "floor_name": 1 }).populate('tower_id')
 
         if (!floor) {
             return errorResponse(res, "Floor does not exist", {}, 404)

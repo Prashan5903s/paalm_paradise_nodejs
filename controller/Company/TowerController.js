@@ -6,7 +6,7 @@ exports.getTowerAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const tower = await Tower.find({ created_by: userId })
+        const tower = await Tower.find({ created_by: userId }).sort({ 'name': 1 })
 
         if (!tower) {
             return errorResponse(res, "Tower does not exist", {}, 404)

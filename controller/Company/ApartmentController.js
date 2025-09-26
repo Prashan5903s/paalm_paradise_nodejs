@@ -7,7 +7,7 @@ exports.getApartmentAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const apartment = await Apartment.find({ created_by: userId })
+        const apartment = await Apartment.find({ created_by: userId }).sort({ "apartment_no": 1 })
 
         if (!apartment) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
@@ -24,7 +24,7 @@ exports.createApartmentAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        const towers = await Tower.find({ created_by: userId }).populate('floors');
+        const towers = await Tower.find({ created_by: userId }).sort({ "name": 1 }).populate('floors');
 
         if (!towers) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
