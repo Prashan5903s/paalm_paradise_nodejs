@@ -15,6 +15,9 @@ const dashboardController = require('../controller/Company/DashboardController')
 const noticeController = require('../controller/Company/NoticeController')
 const eventController = require('../controller/Company/EventController')
 const maintenanceController = require('../controller/Company/MaintenanceController')
+const apartmentTypeController = require('../controller/Company/ApartmentTypeController')
+const ticketTypeController = require('../controller/Company/TicketTypeController')
+const visitorTypeController = require('../controller/Company/VisitorTypeController')
 
 const createUpload = require('../util/upload');
 
@@ -99,5 +102,20 @@ router.put('/event/update/:id', isAuth, eventController.updateEventControllerAPI
 //This route is for maintenance
 router.get("/maintenance-setting/:type", isAuth, maintenanceController.getMaintenanceAPIController)
 router.post('/maintenance-setting/:type', isAuth, maintenanceController.postMaintenanceAPIController)
+
+//This route is for apartment type
+router.get('/apartment-type', isAuth, apartmentTypeController.getApartmentType)
+router.post('/apartment-type', isAuth, apartmentTypeController.postType)
+router.put('/apartment-type/:id', isAuth, apartmentTypeController.updateType)
+
+//This route is for ticket type
+router.get('/ticket-type', isAuth, ticketTypeController.getTicketType)
+router.post('/ticket-type', isAuth, ticketTypeController.postType)
+router.put('/ticket-type/:id', isAuth, ticketTypeController.updateType)
+
+//This route is for visitor type
+router.get('/visitor-type', isAuth, visitorTypeController.getVisitorType)
+router.post('/visitor-type', isAuth, visitorTypeController.postType)
+router.put('/visitor-type/:id', isAuth, visitorTypeController.updateType)
 
 module.exports = router;
