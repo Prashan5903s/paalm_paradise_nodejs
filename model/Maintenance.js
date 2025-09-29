@@ -26,7 +26,21 @@ const maintenanceSchema = new mongoose.Schema({
             type: Number,
             required: false
         }
-    }
+    },
+    created_by: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true
+    },
+    created_at: {
+        type: Date,
+        required: false, // created_at is optional
+        default: Date.now(), // Set the default to the current date/time
+    },
+    updated_at: {
+        type: Date,
+        required: false, // updated_at is optional
+    },
+
 });
 
 module.exports = mongoose.model('Maintenance', maintenanceSchema);

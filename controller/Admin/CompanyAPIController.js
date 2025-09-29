@@ -1,7 +1,50 @@
 const User = require('../../model/User');
 const Country = require('../../model/Country');
 const PackageType = require('../../model/PackageType');
+const Maintenance = require('../../model/Maintenance')
 const bcrypt = require('bcryptjs')
+
+const createMaintenance = async (userId) => {
+
+    const maintenance1 = new Maintenance({
+        cost_type: "1",
+        fixed_data: [{
+            apartment_type: "1",
+            unit_value: "100"
+        },
+        {
+            apartment_type: "2",
+            unit_value: "200"
+        },
+            ,
+        {
+            apartment_type: "3",
+            unit_value: "300"
+        },
+        {
+            apartment_type: "4",
+            unit_value: "400"
+        },
+        {
+            apartment_type: "5",
+            unit_value: "500"
+        }],
+        created_by: userId
+    })
+
+    const maintenance2 = new Maintenance({
+        cost_type: "2",
+        unit_type: {
+            unit_name: "Sqft",
+            unit_value: "3320"
+        },
+        created_by: userId
+    })
+
+    await maintenance1.save()
+    await maintenance2.save()
+
+}
 
 exports.getCompanyIndexAPI = async (req, res, next) => {
 
@@ -102,6 +145,8 @@ exports.postCompanyAPI = async (req, res, next) => {
 
         await user.save();
 
+        createMaintenance(user._id)
+
         res.status(200).json({
             status: 'Success',
             statusCode: 200,
@@ -159,7 +204,7 @@ exports.editCompanyAPI = async (req, res, next) => {
 
 exports.putCompanyAPI = async (req, res, next) => {
     try {
-        const userId = req.userId; 
+        const userId = req.userId;
         const id = req.params.id;
 
         const data = await User.findOne({ created_by: userId, _id: id });

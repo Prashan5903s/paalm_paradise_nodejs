@@ -14,7 +14,7 @@ const complainController = require('../controller/Company/ComplainController')
 const dashboardController = require('../controller/Company/DashboardController')
 const noticeController = require('../controller/Company/NoticeController')
 const eventController = require('../controller/Company/EventController')
-
+const maintenanceController = require('../controller/Company/MaintenanceController')
 
 const createUpload = require('../util/upload');
 
@@ -95,5 +95,9 @@ router.get('/event', isAuth, eventController.getEventAPIController)
 router.get('/event/create', isAuth, eventController.createEventController)
 router.post('/event', isAuth, eventController.postEventControllerAPI)
 router.put('/event/update/:id', isAuth, eventController.updateEventControllerAPI)
+
+//This route is for maintenance
+router.get("/maintenance-setting/:type", isAuth, maintenanceController.getMaintenanceAPIController)
+router.post('/maintenance-setting/:type', isAuth, maintenanceController.postMaintenanceAPIController)
 
 module.exports = router;

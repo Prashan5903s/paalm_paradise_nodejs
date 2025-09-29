@@ -4,7 +4,7 @@ const RoleUser = require('../../model/RoleUser');
 const userService = require('../../services/userService');
 const bcrypt = require('bcryptjs')
 const Apartment = require('../../model/Apartment')
-const { ObjectId } = require('mongoose');
+const Maintenance = require('../../model/Maintenance')
 const { encryptDeterministic, hashSearchField } = require('../../util/encryption');
 
 const { hash, normalizeEmail, normalizePhone } = require('../../util/encryption');
@@ -24,7 +24,7 @@ const updateApartmentStatus = async (idArray, userId) => {
             { assigned_to: userId, _id: { $nin: idArray } },
             { $set: { assigned_to: null, status: false } }
         );
-        
+
 
     } catch (error) {
         console.error("Error updating apartments:", error);
@@ -108,7 +108,6 @@ const normalizeApartmentData = (raw, body) => {
 
     return [];
 };
-
 
 const pick = (obj, fields) => Object.fromEntries(fields.map(key => [key, obj[key]]));
 

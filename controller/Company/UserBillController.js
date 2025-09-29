@@ -2,6 +2,7 @@ const Apartment = require('../../model/Apartment')
 const UserBill = require('../../model/UserBill');
 const Bill = require('../../model/Bill')
 const Counter = require('../../model/Counter')
+const User = require('../../model/User')
 const Maintenance = require('../../model/Maintenance')
 const mongoose = require('mongoose')
 
@@ -15,6 +16,9 @@ exports.getUserBillController = async (req, res, next) => {
         const userId = req.userId;
 
         let data = {};
+
+        const user = await User.findById(userId)
+        const masterId = user.created_by;
 
         const userBills = await UserBill.find({ bill_id: billId }).select('apartment_id');
 
@@ -108,7 +112,7 @@ exports.getUserBillController = async (req, res, next) => {
 
         // const userBill = await UserBill.find({ bill_id: billId }).populate('bill_id').populate('apartment_id').populate('user_id')
 
-        const maintenance = await Maintenance.findOne({ cost_type: "1" })
+        const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: masterId })
 
         const fixedCost = maintenance.fixed_data;
 

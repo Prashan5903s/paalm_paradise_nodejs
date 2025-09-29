@@ -104,7 +104,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             .populate('bill_id')
             .populate('apartment_id').populate('user_id')
 
-        const maintenance = await Maintenance.findOne({ cost_type: "1" })
+        const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: masterId })
 
         const fixedCost = maintenance.fixed_data;
 
