@@ -96,6 +96,14 @@ exports.postComplainController = async (req, res, next) => {
 
         await complain.save();
 
+        const complainUser = new ComplainUser({
+            complain_id: complain._id,
+            complaint_status: "1",
+            created_by: userId
+        })
+
+        await complainUser.save()
+
         return successResponse(res, "Complain saved successfully")
 
     } catch (error) {

@@ -23,7 +23,7 @@ async function getComplainsByStatus(userIds, status) {
                         $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
                     },
                     { $sort: { created_at: -1 } }, // latest first
-                    { $limit: 1 } // सिर्फ latest record
+                    { $limit: 1 } // only latest record
                 ],
                 as: "latest_complain_user"
             }
@@ -34,13 +34,14 @@ async function getComplainsByStatus(userIds, status) {
         {
             $match: {
                 $or: [
-                    { "latest_complain_user": { $exists: false } }, // अगर कोई row नहीं है
-                    { "latest_complain_user.complaint_status": status } // या फिर status match करता है
+                    { "latest_complain_user": { $eq: null } }, // no complain_user exists
+                    { "latest_complain_user.complaint_status": status } // status matches
                 ]
             }
         }
     ]);
 }
+
 exports.getDashboardDataAPI = async (req, res, next) => {
     try {
 
@@ -79,16 +80,16 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             });
 
 
-        const utilityBill = await Bill.find({ user_id: userId, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
+        const utilityBill = await Bill.find({ created_by: userId, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
             model: "Payment"
         });
 
-        const paidUtilityBill = await Bill.find({ user_id: userId, status: true, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
+        const paidUtilityBill = await Bill.find({ created_by: userId, status: true, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
             model: "Payment"
         });
-        const unpaidUtilityBill = await Bill.find({ user_id: userId, status: false, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
+        const unpaidUtilityBill = await Bill.find({ created_by: userId, status: false, bill_data_type: "utilityBills" }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
             model: "Payment"
         });
