@@ -23,7 +23,7 @@ async function getComplainsByStatus(userIds, status) {
                         $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
                     },
                     { $sort: { created_at: -1 } }, // latest first
-                    { $limit: 1 } // only latest record
+                    { $limit: 1 } // केवल latest record
                 ],
                 as: "latest_complain_user"
             }
@@ -32,12 +32,7 @@ async function getComplainsByStatus(userIds, status) {
             $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
         },
         {
-            $match: {
-                $or: [
-                    { "latest_complain_user": { $eq: null } }, // no complain_user exists
-                    { "latest_complain_user.complaint_status": status } // status matches
-                ]
-            }
+            $match: { "latest_complain_user.complaint_status": status }
         }
     ]);
 }
