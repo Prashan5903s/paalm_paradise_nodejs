@@ -12,7 +12,7 @@ const { errorResponse, successResponse } = require('../../util/response');
 async function getComplainsByStatus(userId, status) {
     return await Complain.aggregate([
         {
-            $match: { created_by: { $in: userIds } }
+            $match: { created_by: { $in: userId } }
         },
         {
             $lookup: {
