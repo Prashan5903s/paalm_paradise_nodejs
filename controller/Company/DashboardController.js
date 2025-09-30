@@ -9,11 +9,11 @@ const Complain = require('../../model/Complain')
 const Apartment = require('../../model/Apartment');
 const { errorResponse, successResponse } = require('../../util/response');
 
-async function getComplainsByStatus(userId, status) {
+async function getComplainsByStatus(userIds, status) {
     return await Complain.aggregate([
         {
             $match: {
-                created_by: { $in: userId }
+                created_by: { $in: userIds } // expects array of ObjectIds
             }
         },
         {
@@ -22,10 +22,12 @@ async function getComplainsByStatus(userId, status) {
                 let: { complainId: "$_id" },
                 pipeline: [
                     {
-                        $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
+                        $match: {
+                            $expr: { $eq: ["$complain_id", "$$complainId"] }
+                        }
                     },
-                    { $sort: { created_at: -1 } }, // latest first
-                    { $limit: 1 } // केवल latest record
+                    { $sort: { created_at: -1 } },
+                    { $limit: 1 }
                 ],
                 as: "latest_complain_user"
             }
@@ -34,7 +36,9 @@ async function getComplainsByStatus(userId, status) {
             $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
         },
         {
-            $match: { "latest_complain_user.complaint_status": status }
+            $match: {
+                "latest_complain_user.complaint_status": status
+            }
         }
     ]);
 }
@@ -52,8 +56,8 @@ exports.getDashboardDataAPI = async (req, res, next) => {
 
         const owner = await User.find({ created_by: userId })
 
-        const user = await User.find({ created_by: userId }).select('_id')
-        const userIds = user.map(o => o._id.toString())
+        const user = await User.find({ created_by: userId }).select('_id');
+        const userIds = user.map(o => o._id); // Keep as ObjectId, don't convert to string
 
         const pendingComplain = await getComplainsByStatus(userIds, "1");
         const inProgressComplain = await getComplainsByStatus(userIds, "4");
