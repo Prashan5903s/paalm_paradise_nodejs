@@ -9,7 +9,7 @@ const Complain = require('../../model/Complain')
 const Apartment = require('../../model/Apartment');
 const { errorResponse, successResponse } = require('../../util/response');
 
-async function getComplainsByStatus(userIds, status) {
+async function getComplainsByStatus(userId, status) {
     return await Complain.aggregate([
         {
             $match: { created_by: { $in: userIds } }
