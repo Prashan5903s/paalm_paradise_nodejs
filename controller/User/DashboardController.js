@@ -54,9 +54,9 @@ exports.getDashboardDataAPI = async (req, res, next) => {
         const camera = user.cameras;
 
         // Use like this:
-        const pendingComplain = await getComplainsByStatus(userId, "1");   // pending
-        const inProgressComplain = await getComplainsByStatus(userId, "4"); // in-progress
-        const resolvedComplain = await getComplainsByStatus(userId, "3");   // resolved
+        const pendingComplain = await getComplainsByStatus([userId], "1");   // pending
+        const inProgressComplain = await getComplainsByStatus([userId], "4"); // in-progress
+        const resolvedComplain = await getComplainsByStatus([userId], "3");   // resolved
 
         const paidCommanAreaBill = await Bill.find({ status: true, bill_data_type: "common-area-bill", created_by: masterId }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
