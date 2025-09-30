@@ -101,6 +101,7 @@ router.put('/event/update/:id', isAuth, eventController.updateEventControllerAPI
 
 //This route is for maintenance
 router.get("/maintenance-setting/:type", isAuth, maintenanceController.getMaintenanceAPIController)
+router.get('/maintenance-setting/data/create', isAuth, maintenanceController.createApartmentTypeController)
 router.post('/maintenance-setting/:type', isAuth, maintenanceController.postMaintenanceAPIController)
 
 //This route is for apartment type

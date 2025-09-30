@@ -15,6 +15,7 @@ router.get('/my-bill/:type/:status', isAuth, BillController.getBillController)
 // This route is for complain
 router.get('/my-complain', isAuth, ComplainController.getMyComplainController)
 router.post('/my-complain', isAuth, ComplainController.postComplainController)
+router.get('/my-complain/data/create', isAuth, ComplainController.getCreateComplainController)
 router.delete('/my-complain/:id', isAuth, ComplainController.deleteComplainController)
 
 //This route is for complain resolved

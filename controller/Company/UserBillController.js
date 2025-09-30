@@ -112,7 +112,7 @@ exports.getUserBillController = async (req, res, next) => {
 
         // const userBill = await UserBill.find({ bill_id: billId }).populate('bill_id').populate('apartment_id').populate('user_id')
 
-        const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: masterId })
+        const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
 
         const fixedCost = maintenance.fixed_data;
 

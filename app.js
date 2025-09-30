@@ -9,7 +9,7 @@ const userRouter = require('./route/user')
 const path = require('path');
 const bcrypt = require('bcryptjs')
 const fs = require('fs');
-const Maintenance = require('./model/Maintenance')
+// const Maintenance = require('./model/Maintenance')
 const cors = require('cors');
 const User = require('./model/User');
 

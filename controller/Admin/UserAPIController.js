@@ -4,7 +4,7 @@ const RoleUser = require('../../model/RoleUser');
 const userService = require('../../services/userService');
 const bcrypt = require('bcryptjs')
 const Apartment = require('../../model/Apartment')
-const Maintenance = require('../../model/Maintenance')
+// const Maintenance = require('../../model/Maintenance')
 const { encryptDeterministic, hashSearchField } = require('../../util/encryption');
 
 const { hash, normalizeEmail, normalizePhone } = require('../../util/encryption');

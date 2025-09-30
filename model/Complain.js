@@ -32,9 +32,10 @@ const complainSchema = new mongoose.Schema({
         required: true
     }, // 1 for individual, 2 for society
     category: {
-        type: Number,
-        required: true
-    }, // 1 for plumbing, 2 for electricity, 3 for leakage, 4 for Internet, 5 for house keeping/guard, 6 for others
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "ticket_type"
+    },
     description: {
         type: String,
         required: true,

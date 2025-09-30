@@ -1,5 +1,6 @@
 const Tower = require('../../model/Tower')
 const Apartment = require('../../model/Apartment');
+const ApartmentType = require('../../model/ApartmentType');
 const { errorResponse, successResponse } = require('../../util/response');
 
 exports.getApartmentAPI = async (req, res, next) => {
@@ -7,7 +8,7 @@ exports.getApartmentAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const apartment = await Apartment.find({ created_by: userId }).sort({ "apartment_no": 1 })
+        const apartment = await Apartment.find({ created_by: userId }).populate('apartment_type').sort({ "apartment_no": 1 })
 
         if (!apartment) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
@@ -24,13 +25,20 @@ exports.createApartmentAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
 
+        const data = {}
+
+        const apartmentType = await ApartmentType.find({ created_by: userId })
+
         const towers = await Tower.find({ created_by: userId }).sort({ "name": 1 }).populate('floors');
 
-        if (!towers) {
+        if (!towers || !apartmentType) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
         }
 
-        return successResponse(res, "Apartment fetched successfully", towers)
+        data['towers'] = towers
+        data['apartmentType'] = apartmentType
+
+        return successResponse(res, "Apartment fetched successfully", data)
 
     } catch (error) {
         next(error)
@@ -78,7 +86,7 @@ exports.updateApartmentAPI = async (req, res, next) => {
             return errorResponse(res, "Apartment does not exist", {}, 404)
         }
 
-        await Apartment.findOneAndUpdate({ created_by: userId }, {
+        await Apartment.findOneAndUpdate({ created_by: userId, _id: apartmentId }, {
             tower_id: tower,
             floor_id: floor,
             apartment_no: apartmentNumber,

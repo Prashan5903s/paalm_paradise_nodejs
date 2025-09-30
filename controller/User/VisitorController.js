@@ -1,5 +1,7 @@
 const Visitor = require('../../model/Visitor');
 const Apartment = require('../../model/Apartment')
+const User = require('../../model/User')
+const VisitorType = require('../../model/VisitorType')
 const { errorResponse, successResponse } = require('../../util/response');
 
 function generateSixDigitCode() {
@@ -13,6 +15,7 @@ exports.getVisitorController = async (req, res, next) => {
 
         const visitor = await Visitor.find({ created_by: userId })
             .populate('user_id')
+            .populate('category')
             .populate({
                 path: 'apartment_id',
                 populate: [
@@ -38,13 +41,23 @@ exports.createVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
+        const data = {}
+
+        const users = await User.findById(userId)
+        const masterId = users.created_by;
+
         const apartment = await Apartment.find({ assigned_to: userId })
 
-        if (!apartment) {
+        const visitorType = await VisitorType.find({ created_by: masterId })
+
+        if (!apartment || !visitorType) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
         }
 
-        return successResponse(res, "Apartment fetched successfully", apartment)
+        data['apartment'] = apartment
+        data['visitorType'] = visitorType
+
+        return successResponse(res, "Apartment fetched successfully", data)
 
     } catch (error) {
         next(error)
@@ -104,7 +117,18 @@ exports.putVisitiorController = async (req, res, next) => {
         const id = req.params.id;
         const userId = req.userId;
 
-        const { visitor_name, visitor_contact, checkin_date, checkin_from_time, checkin_to_time, apartment_id, no_of_persons, vehicle_number, category, description } = req.body;
+        const {
+            visitor_name,
+            visitor_contact,
+            checkin_date,
+            checkin_from_time,
+            checkin_to_time,
+            apartment_id,
+            no_of_persons,
+            vehicle_number,
+            category,
+            description
+        } = req.body;
 
         let apartmentId = null;
 

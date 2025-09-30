@@ -1,4 +1,5 @@
 const Maintenance = require('../../model/Maintenance');
+const ApartmentType = require('../../model/ApartmentType');
 const { errorResponse, successResponse } = require('../../util/response');
 
 exports.getMaintenanceAPIController = async (req, res, next) => {
@@ -8,13 +9,35 @@ exports.getMaintenanceAPIController = async (req, res, next) => {
 
         const type = req.params.type;
 
+        let finalData;
+
         const maintenance = await Maintenance.findOne({ created_by: userId, cost_type: type })
 
         if (!maintenance) {
-            return errorResponse(res, "Maintenance does not exist", {}, 404)
+            finalData = {}
+        } else {
+            finalData = maintenance
         }
 
-        return successResponse(res, "Maintenance fetched successfully", maintenance)
+        return successResponse(res, "Maintenance fetched successfully", finalData)
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.createApartmentTypeController = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+
+        const apartmentType = await ApartmentType.find({ created_by: userId });
+
+        if (!apartmentType) {
+            return errorResponse(res, "Apartment type does not exist", {}, 404)
+        }
+
+        return successResponse(res, "Apartment fetched successfully", apartmentType)
 
     } catch (error) {
         next(error)
@@ -32,10 +55,6 @@ exports.postMaintenanceAPIController = async (req, res, next) => {
 
         const maintenance = await Maintenance.findOne({ created_by: userId, cost_type: type })
 
-        if (!maintenance) {
-            return errorResponse(res, "Maintenance does not exist", {}, 404)
-        }
-
         if (type == "1") {
 
             const result = Object.entries(unit_data).map(([key, value]) => ({
@@ -43,16 +62,43 @@ exports.postMaintenanceAPIController = async (req, res, next) => {
                 unit_value: String(value)
             }));
 
-            await Maintenance.findOneAndUpdate({ created_by: userId, cost_type: type }, {
-                fixed_data: result
-            })
+            if (!maintenance) {
+
+                const maintenances = new Maintenance({
+                    fixed_data: result,
+                    created_by: userId,
+                    cost_type: type
+                })
+
+                await maintenances.save()
+
+            } else {
+
+                await Maintenance.findOneAndUpdate({ created_by: userId, cost_type: type }, {
+                    fixed_data: result
+                })
+
+            }
 
         } else {
 
-            await Maintenance.findOneAndUpdate({ created_by: userId, cost_type: type }, {
-                unit_type: unit_data
-            })
+            if (!maintenance) {
 
+                const maintenances = new Maintenance({
+                    unit_type: unit_data,
+                    created_by: userId,
+                    cost_type: type
+                })
+
+                await maintenances.save()
+
+            } else {
+
+                await Maintenance.findOneAndUpdate({ created_by: userId, cost_type: type }, {
+                    unit_type: unit_data
+                })
+
+            }
         }
 
         return successResponse(res, "Maintenance setting updated successfully")

@@ -45,8 +45,9 @@ const visitorSchema = new mongoose.Schema({
         required: true
     },
     category: {
-        type: String,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "visitor_type"
     },
     vehicle_no: {
         type: String,

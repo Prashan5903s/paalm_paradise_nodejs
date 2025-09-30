@@ -1,5 +1,7 @@
 const mongoose = require('mongoose')
 const Complain = require('../../model/Complain');
+const TicketType = require('../../model/TicketType');
+const User = require('../../model/User')
 const ComplainUser = require('../../model/ComplainUser')
 const { errorResponse, successResponse } = require('../../util/response');
 
@@ -20,17 +22,26 @@ exports.getMyComplainController = async (req, res, next) => {
                     from: "complain_users",
                     let: { complainId: "$_id" },
                     pipeline: [
-                        {
-                            $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
-                        },
-                        { $sort: { created_at: -1 } }, // latest first
-                        { $limit: 1 } // केवल latest record
+                        { $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } } },
+                        { $sort: { created_at: -1 } },
+                        { $limit: 1 }
                     ],
                     as: "latest_complain_user"
                 }
             },
             {
                 $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
+            },
+            {
+                $lookup: {
+                    from: "ticket_types", // ध्यान दें collection का plural नाम
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category"
+                }
+            },
+            {
+                $unwind: { path: "$category", preserveNullAndEmptyArrays: true }
             }
         ]);
 
@@ -44,6 +55,28 @@ exports.getMyComplainController = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getCreateComplainController = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+
+        const user = await User.findById(userId)
+
+        const masterId = user.created_by;
+
+        const ticketType = await TicketType.find({ created_by: masterId })
+
+        if (!ticketType || !user) {
+            return errorResponse(res, "Create data does not exist", {}, 404)
+        }
+
+        return successResponse(res, 'Create data fetched successfully', ticketType)
+
+    } catch (error) {
+        next(error)
+    }
+}
 
 exports.postComplainController = async (req, res, next) => {
     try {

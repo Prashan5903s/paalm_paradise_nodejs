@@ -22,9 +22,9 @@ const apartmentSchema = new mongoose.Schema({
         required: true
     },
     apartment_type: {
-        type: String,
-        maxLength: 255,
-        required: true
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: "apartment_type"
     },
     assigned_to: {
         type: mongoose.Schema.Types.ObjectId,

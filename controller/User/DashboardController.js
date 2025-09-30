@@ -9,10 +9,10 @@ const UserBill = require('../../model/UserBill')
 const Maintenance = require('../../model/Maintenance')
 const { successResponse, errorResponse } = require('../../util/response')
 
-async function getComplainsByStatus(userId, status) {
+async function getComplainsByStatus(userIds, status) {
     return await Complain.aggregate([
         {
-            $match: { created_by: new mongoose.Types.ObjectId(userId) }
+            $match: { created_by: { $in: userIds } }
         },
         {
             $lookup: {
@@ -23,7 +23,7 @@ async function getComplainsByStatus(userId, status) {
                         $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } }
                     },
                     { $sort: { created_at: -1 } }, // latest first
-                    { $limit: 1 } // केवल latest record
+                    { $limit: 1 } // सिर्फ latest record
                 ],
                 as: "latest_complain_user"
             }
@@ -32,7 +32,12 @@ async function getComplainsByStatus(userId, status) {
             $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
         },
         {
-            $match: { "latest_complain_user.complaint_status": status }
+            $match: {
+                $or: [
+                    { "latest_complain_user": { $exists: false } }, // अगर कोई row नहीं है
+                    { "latest_complain_user.complaint_status": status } // या फिर status match करता है
+                ]
+            }
         }
     ]);
 }
