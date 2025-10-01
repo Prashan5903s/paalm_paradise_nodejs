@@ -7,6 +7,10 @@ const paymentSchema = new mongoose.Schema({
         ref: "Bill",   // ✅ Relation with Bill model
         required: true
     },
+    user_bill_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null
+    },
     receipt_no: {
         type: String,
         unique: true,  // ✅ ensures no duplicate receipt numbers

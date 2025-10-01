@@ -3,6 +3,7 @@ const UserBill = require('../../model/UserBill');
 const Bill = require('../../model/Bill')
 const Counter = require('../../model/Counter')
 const User = require('../../model/User')
+const Payment = require('../../model/Payment');
 const Maintenance = require('../../model/Maintenance')
 const mongoose = require('mongoose')
 
@@ -16,9 +17,6 @@ exports.getUserBillController = async (req, res, next) => {
         const userId = req.userId;
 
         let data = {};
-
-        const user = await User.findById(userId)
-        const masterId = user.created_by;
 
         const userBills = await UserBill.find({ bill_id: billId }).select('apartment_id');
 
@@ -52,7 +50,7 @@ exports.getUserBillController = async (req, res, next) => {
                     }
                 }
             },
-            // get bill details for user_bills
+            // bring bill details
             {
                 $lookup: {
                     from: "bills",
@@ -93,12 +91,54 @@ exports.getUserBillController = async (req, res, next) => {
             {
                 $project: { bill_details: 0 }
             },
-            // bring in user details (assigned_to)
+            // bring payments related to user_bills
             {
                 $lookup: {
-                    from: "users",              // collection name
-                    localField: "assigned_to",  // Apartment.assigned_to
-                    foreignField: "_id",        // User._id
+                    from: "payments",
+                    let: { userBillIds: "$user_bills._id" },
+                    pipeline: [
+                        {
+                            $match: {
+                                $expr: { $in: ["$user_bill_id", "$$userBillIds"] }
+                            }
+                        }
+                    ],
+                    as: "payments"
+                }
+            },
+            {
+                $addFields: {
+                    user_bills: {
+                        $map: {
+                            input: "$user_bills",
+                            as: "ub",
+                            in: {
+                                $mergeObjects: [
+                                    "$$ub",
+                                    {
+                                        payments: {
+                                            $filter: {
+                                                input: "$payments",
+                                                as: "p",
+                                                cond: { $eq: ["$$p.user_bill_id", "$$ub._id"] }
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            {
+                $project: { payments: 0 } // cleanup: remove temp joined array
+            },
+            // bring assigned user details
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "assigned_to",
+                    foreignField: "_id",
                     as: "assigned_user"
                 }
             },
@@ -110,19 +150,15 @@ exports.getUserBillController = async (req, res, next) => {
             }
         ]);
 
-        // const userBill = await UserBill.find({ bill_id: billId }).populate('bill_id').populate('apartment_id').populate('user_id')
+        const payment = await Payment.find({ created_by: userId, bill_id: billId })
 
-        const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
-
-        const fixedCost = maintenance.fixed_data;
-
-        if (!apartments) {
+        if (!apartments || !payment) {
             return errorResponse(res, 'User bill does not exist', {}, 404)
         }
 
         data['userBill'] = apartments;
 
-        data['fixed_cost'] = fixedCost;
+        data['payment'] = payment;
 
         return successResponse(res, 'User bill fetched successfully', data)
 
@@ -141,6 +177,7 @@ exports.postUserBillController = async (req, res, next) => {
             status,
             billId,
             apartment_id,
+            userBillId,
             paid_remark,
             payment_mode,
             cheque_no,
@@ -151,33 +188,23 @@ exports.postUserBillController = async (req, res, next) => {
             neft_date,
         } = req.body;
 
-        const apartment = await Apartment.findById(apartment_id);
-
-        if (!apartment) {
-            return warningResponse(res, "Apartment not found.", {}, 404);
-        }
-
-        const user_id = apartment.assigned_to;
-
-        const userBill = new UserBill({
+        const payment = new Payment({
             bank_name,
             amount: Number(amount),
             cheque_no,
-            apartment_id,
-            user_id,
+            user_bill_id: userBillId,
             created_by: userId,
             bill_id: billId,
             cheque_date,
-            payment_mode,
             demand_draft_no,
-            paid_remark,
             demand_draft_date,
+            paid_remark,
             neft_no,
             neft_date,
             status,
         });
 
-        await userBill.save();
+        await payment.save();
 
         return successResponse(res, "Payment done successfully");
     } catch (error) {

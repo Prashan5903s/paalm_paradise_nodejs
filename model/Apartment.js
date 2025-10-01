@@ -34,7 +34,7 @@ const apartmentSchema = new mongoose.Schema({
     },
     status: {
         type: Boolean,
-        required: true
+        default: false
     },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,

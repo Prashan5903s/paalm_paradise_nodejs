@@ -1,8 +1,9 @@
-const Apartment = require('../../model/Apartment')
 const Bill = require('../../model/Bill')
-const BillType = require('../../model/BillType')
 const User = require('../../model/User')
+const BillType = require('../../model/BillType')
 const UserBill = require('../../model/UserBill')
+const Apartment = require('../../model/Apartment')
+const Maintenance = require('../../model/Maintenance')
 const { errorResponse, successResponse } = require('../../util/response')
 
 exports.getBillData = async (req, res, next) => {
@@ -71,7 +72,7 @@ exports.postBillController = async (req, res, next) => {
             bill_due_date,
             payment_due_date,
             month,
-            addtional_cost, // ✅ fixed naming
+            addtional_cost,
             type,
             year
         } = req.body;
@@ -124,19 +125,35 @@ exports.postBillController = async (req, res, next) => {
 
         await bill.save();
 
-        // ✅ If type = 2 or 3, auto-create UserBills
-        if (type == "common-area-bill" || type == 'maintenance') {
+        // ✅ If type =  3, auto-create UserBills
+        if (type == 'maintenance') {
             const users = await User.find({ created_by: userId }).select('_id');
             const userIds = users.map(user => user._id);
+
+            const maintenance = await Maintenance.findOne({ created_by: userId, cost_type: "1" })
+
+            if (!maintenance) {
+                return errorResponse(res, "Maintenance does not exist", {}, 500)
+            }
+
+            const fixedData = maintenance.fixed_data;
 
             const apartments = await Apartment.find({ assigned_to: { $in: userIds } });
 
             await Promise.all(
                 apartments.map(item => {
+
+                    const apartmentType = item?.apartment_type;
+
+                    const apartTypAmnt = fixedData.find(
+                        item => item.apartment_type.toString() === apartmentType.toString()
+                    )?.unit_value ?? null;
+
                     const userBill = new UserBill({
                         apartment_id: item._id,
                         user_id: item.assigned_to,
                         bill_id: bill._id,
+                        amount: apartTypAmnt,
                         created_by: userId
                     });
                     return userBill.save();
