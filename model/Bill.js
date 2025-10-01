@@ -1,4 +1,5 @@
 const mongoose = require('mongoose')
+const Counter = require('../model/Counter')
 
 const billSchema = new mongoose.Schema({
     bill_data_type: {
@@ -14,6 +15,11 @@ const billSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
         default: null
+    },
+    invoice_no: {
+        type: String,
+        maxLength: 255,
+        unique: true
     },
     bill_type: {
         type: mongoose.Schema.Types.ObjectId,
@@ -71,6 +77,29 @@ const billSchema = new mongoose.Schema({
         type: Date
     }
 })
+
+billSchema.pre('save', async function (next) {
+
+    if (this.invoice_no) return next(); // Already set
+
+    // Get next sequence
+    const counter = await Counter.findByIdAndUpdate(
+        'receipt',
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+    );
+
+    const seq = counter.seq;
+    const now = new Date();
+    const yyyy = now.getFullYear();
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const dd = String(now.getDate()).padStart(2, '0');
+    const dateStr = `${yyyy}${mm}${dd}`;
+    const seqPadded = String(seq).padStart(6, '0');
+
+    this.invoice_no = `INVC-${dateStr}-${seqPadded}`;
+    next();
+});
 
 billSchema.virtual("payments", {
     ref: "Payment",
