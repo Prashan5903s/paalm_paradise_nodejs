@@ -18,6 +18,7 @@ const maintenanceController = require('../controller/Company/MaintenanceControll
 const apartmentTypeController = require('../controller/Company/ApartmentTypeController')
 const ticketTypeController = require('../controller/Company/TicketTypeController')
 const visitorTypeController = require('../controller/Company/VisitorTypeController')
+const reportController = require('../controller/Company/ReportController')
 
 const createUpload = require('../util/upload');
 
@@ -118,5 +119,7 @@ router.put('/ticket-type/:id', isAuth, ticketTypeController.updateType)
 router.get('/visitor-type', isAuth, visitorTypeController.getVisitorType)
 router.post('/visitor-type', isAuth, visitorTypeController.postType)
 router.put('/visitor-type/:id', isAuth, visitorTypeController.updateType)
+
+router.get('/graph/payment/report/:type', isAuth, reportController.getGraphPaymentReport)
 
 module.exports = router;
