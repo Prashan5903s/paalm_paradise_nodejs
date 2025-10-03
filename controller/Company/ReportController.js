@@ -89,8 +89,34 @@ exports.getGraphPaymentReport = async (req, res, next) => {
 
 exports.getTablePaymentReport = async (req, res, next) => {
     try {
-        
+
         const userId = req?.userId;
+        const type = req.params.type;
+        const start = req?.params?.start;
+        const end = req?.params?.end;
+
+        let bill;
+
+        if (type == "all") {
+
+            bill = await Bill.find({
+                created_by: userId,
+                created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).populate('payments');
+
+        } else {
+            bill = await Bill.find({
+                created_by: userId, bill_data_type: type, created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).populate('payments')
+        }
+
+        return successResponse(res, "Table payment report fetched successfully", bill)
 
     } catch (error) {
         next(error)

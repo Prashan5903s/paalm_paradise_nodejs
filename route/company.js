@@ -121,5 +121,6 @@ router.post('/visitor-type', isAuth, visitorTypeController.postType)
 router.put('/visitor-type/:id', isAuth, visitorTypeController.updateType)
 
 router.get('/graph/payment/report/:type', isAuth, reportController.getGraphPaymentReport)
+router.get('/table/payment/report/:start/:end/:type', isAuth, reportController.getTablePaymentReport)
 
 module.exports = router;
