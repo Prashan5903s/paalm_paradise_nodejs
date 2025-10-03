@@ -1,4 +1,6 @@
 const Bill = require('../../model/Bill');
+const UserBill = require('../../model/UserBill')
+const Maintenance = require('../../model/Maintenance')
 const { successResponse } = require('../../util/response');
 
 exports.getGraphPaymentReport = async (req, res, next) => {
@@ -117,6 +119,124 @@ exports.getTablePaymentReport = async (req, res, next) => {
         }
 
         return successResponse(res, "Table payment report fetched successfully", bill)
+
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.getFinancialReport = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+        const type = req?.params?.type
+        const start = req?.params?.start;
+        const end = req?.params?.end;
+
+        let data = [];
+
+        if (type == 'common-area-bill' || type == "utilityBills") {
+
+            const bills = await Bill.find({
+                bill_data_type: type,
+                created_by: userId,
+                created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).populate('apartment_id').populate('bill_type').populate({
+                path: "payments",
+                model: "Payment"
+            });
+
+            data = bills;
+
+        } else if (type == 'maintenance') {
+
+            let datas = {}
+
+            const bills = await Bill.find({
+                bill_data_type: type,
+                created_by: userId,
+                created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).select('_id');
+            const billsId = bills.map(b => b._id.toString())
+
+            const userBill = await UserBill.find({ bill_id: { $in: billsId } })
+                .populate('bill_id')
+                .populate('apartment_id')
+                .populate('user_id')
+                .populate('payments')
+
+            const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
+
+            const fixedCost = maintenance.fixed_data;
+
+            if (!userBill) {
+                return errorResponse(res, 'User bill does not exist', {}, 404)
+            }
+
+            datas['userBill'] = userBill;
+
+            datas['fixedCost'] = fixedCost;
+
+            data = datas;
+
+        } else {
+
+            let datas = {}
+
+            const user_bill = await Bill.find({
+                created_by: userId,
+                bill_data_type: {
+                    $ne: "maintenance"
+                },
+                created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).populate('apartment_id').populate('bill_type').populate({
+                path: "payments",
+                model: "Payment"
+            })
+
+            const bills = await Bill.find({
+                created_by: userId,
+                bill_data_type: "maintenance",
+                created_at: {
+                    $gte: new Date(start),
+                    $lte: new Date(end)
+                }
+            }).select('_id');
+
+            const billsId = bills.map(b => b._id.toString())
+
+            const userBill = await UserBill.find({ bill_id: { $in: billsId } })
+                .populate('bill_id')
+                .populate('apartment_id')
+                .populate('user_id')
+                .populate('payments')
+
+            const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
+
+            const fixedCost = maintenance.fixed_data;
+
+            if (!userBill) {
+                return errorResponse(res, 'User bill does not exist', {}, 404)
+            }
+
+            datas['userBill'] = [...userBill, ...user_bill];
+
+            datas['fixedCost'] = fixedCost;
+
+            data = datas;
+
+        }
+
+        return successResponse(res, "Financial report fetched successfully", data)
 
     } catch (error) {
         next(error)

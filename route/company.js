@@ -120,7 +120,11 @@ router.get('/visitor-type', isAuth, visitorTypeController.getVisitorType)
 router.post('/visitor-type', isAuth, visitorTypeController.postType)
 router.put('/visitor-type/:id', isAuth, visitorTypeController.updateType)
 
+//This route is for payment report
 router.get('/graph/payment/report/:type', isAuth, reportController.getGraphPaymentReport)
 router.get('/table/payment/report/:start/:end/:type', isAuth, reportController.getTablePaymentReport)
+
+//This route is for financial report
+router.get("/table/financial/report/:start/:end/:type", isAuth, reportController.getFinancialReport)
 
 module.exports = router;
