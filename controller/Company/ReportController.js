@@ -107,7 +107,27 @@ exports.getTablePaymentReport = async (req, res, next) => {
                     $gte: new Date(start),
                     $lte: new Date(end)
                 }
-            }).populate('payments');
+            })
+                .populate("bill_type") // bill_type populate
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",   // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",    // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
 
         } else {
             bill = await Bill.find({
@@ -115,7 +135,27 @@ exports.getTablePaymentReport = async (req, res, next) => {
                     $gte: new Date(start),
                     $lte: new Date(end)
                 }
-            }).populate('payments')
+            })
+                .populate("bill_type") // bill_type populate
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",   // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",    // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
         }
 
         return successResponse(res, "Table payment report fetched successfully", bill)
@@ -144,10 +184,27 @@ exports.getFinancialReport = async (req, res, next) => {
                     $gte: new Date(start),
                     $lte: new Date(end)
                 }
-            }).populate('apartment_id').populate('bill_type').populate({
-                path: "payments",
-                model: "Payment"
-            });
+            })
+                .populate("bill_type") // bill_type populate
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",   // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",    // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
 
             data = bills;
 
@@ -163,13 +220,31 @@ exports.getFinancialReport = async (req, res, next) => {
                     $lte: new Date(end)
                 }
             }).select('_id');
+
             const billsId = bills.map(b => b._id.toString())
 
             const userBill = await UserBill.find({ bill_id: { $in: billsId } })
-                .populate('bill_id')
-                .populate('apartment_id')
-                .populate('user_id')
-                .populate('payments')
+                .populate("bill_id") // Bill details
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate("user_id") // Direct user of UserBill
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",  // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",     // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
 
             const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
 
@@ -198,10 +273,27 @@ exports.getFinancialReport = async (req, res, next) => {
                     $gte: new Date(start),
                     $lte: new Date(end)
                 }
-            }).populate('apartment_id').populate('bill_type').populate({
-                path: "payments",
-                model: "Payment"
             })
+                .populate("bill_type") // bill_type populate
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",   // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",    // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
 
             const bills = await Bill.find({
                 created_by: userId,
@@ -215,10 +307,27 @@ exports.getFinancialReport = async (req, res, next) => {
             const billsId = bills.map(b => b._id.toString())
 
             const userBill = await UserBill.find({ bill_id: { $in: billsId } })
-                .populate('bill_id')
-                .populate('apartment_id')
-                .populate('user_id')
-                .populate('payments')
+                .populate("bill_id") // Bill details
+                .populate({
+                    path: "apartment_id",
+                    populate: {
+                        path: "assigned_to",   // Apartment → Assigned User
+                        model: "users"
+                    }
+                })
+                .populate("user_id") // Direct user of UserBill
+                .populate({
+                    path: "payments",
+                    model: "Payment",
+                    populate: {
+                        path: "user_bill_id",  // Payment → UserBill
+                        model: "user_bill",
+                        populate: {
+                            path: "user_id",     // UserBill → User
+                            model: "users"
+                        }
+                    }
+                });
 
             const maintenance = await Maintenance.findOne({ cost_type: "1", created_by: userId })
 
