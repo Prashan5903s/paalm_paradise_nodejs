@@ -1,5 +1,8 @@
 const mongoose = require("mongoose");
-const { Schema, Types } = mongoose;
+const {
+    Schema,
+    Types
+} = mongoose;
 
 const userSchema = new Schema({
     company_id: {
@@ -90,43 +93,70 @@ const userSchema = new Schema({
     photo: {
         type: String,
     },
-    cameras: [
-        {
-            title: {
-                type: String,
-                required: true,
-                maxlength: 255,
-            },
-            ip: {
-                type: String,
-                required: true,
-                maxlength: 5000,
-                validate: {
-                    validator: function (v) {
-                        // Basic URL check (http/https)
-                        return /^https?:\/\/.+/.test(v);
-                    },
-                    message: (props) => `${props.value} is not a valid camera URL`,
+    cameras: [{
+        title: {
+            type: String,
+            required: true,
+            maxlength: 255,
+        },
+        ip: {
+            type: String,
+            required: true,
+            maxlength: 5000,
+            validate: {
+                validator: function (v) {
+                    // Basic URL check (http/https)
+                    return /^https?:\/\/.+/.test(v);
                 },
+                message: (props) => `${props.value} is not a valid camera URL`,
             },
         },
-    ],
-    apartment_data: [
-        {
-            tower_id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: false,
-            },
-            floor_id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: false,
-            },
-            apartment_id: {
-                type: mongoose.Schema.Types.ObjectId,
-                required: false,
-            }
+    }, ],
+    tenant_data: {
+        apartment_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: false,
+            ref: "apartment"
         },
-    ],
+        contact_start_date: {
+            type: String,
+            required: false
+        },
+        contact_end_date: {
+            type: String,
+            required: false
+        },
+        move_in_date: {
+            type: String,
+            required: false
+        },
+        move_out_date: {
+            type: String,
+            required: false
+        },
+        rent_billing_cycle: {
+            type: String,
+            required: false
+        },
+        rent_amount: {
+            type: String,
+            required: false
+        }
+    },
+    apartment_data: [{
+        tower_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: false,
+        },
+        floor_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: false,
+        },
+        apartment_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            required: false,
+        }
+    }, ],
     qnap_username: {
         type: String,
         required: false,

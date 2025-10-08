@@ -7,7 +7,13 @@ const bcrypt = require('bcryptjs')
 exports.getCompanyIndexAPI = async (req, res, next) => {
 
     const userId = req.userId;
-    const company = await User.find({ created_by: userId });
+    const company = await User.find({
+        created_by: userId,
+        user_type: {
+            $ne: "4"
+        }
+    });
+
 
     res.status(200).json({
         'status': 'Success',
@@ -25,7 +31,11 @@ exports.createCompanyAPI = async (req, res, next) => {
 
     const userId = req.userId;
 
-    const packageTypes = await PackageType.find({ created_by: userId }, { package: 1 });
+    const packageTypes = await PackageType.find({
+        created_by: userId
+    }, {
+        package: 1
+    });
 
     if (!packageTypes) {
         const error = new Error("Package type does not exist!");
@@ -69,9 +79,22 @@ exports.postCompanyAPI = async (req, res, next) => {
         const imageUrl = req.file ? req.file.filename : '';
 
         const {
-            first_name, last_name, company_name, email, password,
-            country_id, state_id, city_id, address, status,
-            phone, website, package_id, pincode, gst_no, pan_no,
+            first_name,
+            last_name,
+            company_name,
+            email,
+            password,
+            country_id,
+            state_id,
+            city_id,
+            address,
+            status,
+            phone,
+            website,
+            package_id,
+            pincode,
+            gst_no,
+            pan_no,
         } = req.body;
 
         // Optional: hash password
@@ -117,13 +140,19 @@ exports.checkEmailCompanyAPI = async (req, res, next) => {
     const email = req.params.email;
     const id = req.params.id;
 
-    const query = { email: email };
+    const query = {
+        email: email
+    };
     if (id && id !== 'null' && id !== 'undefined') {
-        query._id = { $ne: id };
+        query._id = {
+            $ne: id
+        };
     }
 
     const userExist = await User.findOne(query);
-    res.json({ exists: !!userExist }); // returns { exists: true } or { exists: false }
+    res.json({
+        exists: !!userExist
+    }); // returns { exists: true } or { exists: false }
 };
 
 exports.editCompanyAPI = async (req, res, next) => {
@@ -132,7 +161,13 @@ exports.editCompanyAPI = async (req, res, next) => {
         const userId = req.userId;
         const companyId = req.params.id;
 
-        const company = await User.findOne({ _id: companyId, created_by: userId });
+        const company = await User.findOne({
+            _id: companyId,
+            created_by: userId,
+            user_type: {
+                $ne: "4"
+            }
+        });
 
         if (!company) {
             return res.status(404).json({
@@ -163,14 +198,32 @@ exports.putCompanyAPI = async (req, res, next) => {
         const userId = req.userId;
         const id = req.params.id;
 
-        const data = await User.findOne({ created_by: userId, _id: id });
+        const data = await User.findOne({
+            created_by: userId,
+            _id: id,
+            user_type: {
+                $ne: "4"
+            }
+        });
 
         const imageUrl = req.file ? req.file.filename : '';
 
         const {
-            first_name, last_name, company_name, email,
-            country_id, state_id, city_id, address, status,
-            phone, website, package_id, pincode, gst_no, pan_no
+            first_name,
+            last_name,
+            company_name,
+            email,
+            country_id,
+            state_id,
+            city_id,
+            address,
+            status,
+            phone,
+            website,
+            package_id,
+            pincode,
+            gst_no,
+            pan_no
         } = req.body;
 
         data.first_name = first_name;

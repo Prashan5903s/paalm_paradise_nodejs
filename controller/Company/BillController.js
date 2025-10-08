@@ -4,7 +4,10 @@ const BillType = require('../../model/BillType')
 const UserBill = require('../../model/UserBill')
 const Apartment = require('../../model/Apartment')
 const Maintenance = require('../../model/Maintenance')
-const { errorResponse, successResponse } = require('../../util/response')
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response')
 
 exports.getBillData = async (req, res, next) => {
     try {
@@ -13,7 +16,10 @@ exports.getBillData = async (req, res, next) => {
 
         const type = req.params.type;
 
-        const bill = await Bill.find({ created_by: userId, bill_data_type: type }).populate('apartment_id').populate('bill_type').populate({
+        const bill = await Bill.find({
+            created_by: userId,
+            bill_data_type: type
+        }).populate('apartment_id').populate('bill_type').populate({
             path: "payments",
             model: "Payment"
         })
@@ -39,7 +45,10 @@ exports.getCreateBill = async (req, res, next) => {
         const apartment = await Apartment.find({
             created_by: userId,
             status: true,
-            assigned_to: { $exists: true, $ne: null }
+            assigned_to: {
+                $exists: true,
+                $ne: null
+            }
         });
 
         const billType = await BillType.find();
@@ -127,10 +136,18 @@ exports.postBillController = async (req, res, next) => {
 
         // ✅ If type =  3, auto-create UserBills
         if (type == 'maintenance') {
-            const users = await User.find({ created_by: userId }).select('_id');
+            const users = await User.find({
+                created_by: userId,
+                user_type: {
+                    $ne: "4"
+                }
+            }).select('_id');
             const userIds = users.map(user => user._id);
 
-            const maintenance = await Maintenance.findOne({ created_by: userId, cost_type: "1" })
+            const maintenance = await Maintenance.findOne({
+                created_by: userId,
+                cost_type: "1"
+            })
 
             if (!maintenance) {
                 return errorResponse(res, "Maintenance does not exist", {}, 500)
@@ -138,7 +155,11 @@ exports.postBillController = async (req, res, next) => {
 
             const fixedData = maintenance.fixed_data;
 
-            const apartments = await Apartment.find({ assigned_to: { $in: userIds } });
+            const apartments = await Apartment.find({
+                assigned_to: {
+                    $in: userIds
+                }
+            });
 
             await Promise.all(
                 apartments.map(item => {
@@ -161,7 +182,9 @@ exports.postBillController = async (req, res, next) => {
             );
         }
 
-        return successResponse(res, "Bill created successfully", { bill });
+        return successResponse(res, "Bill created successfully", {
+            bill
+        });
     } catch (error) {
         next(error);
     }
@@ -176,7 +199,10 @@ exports.putBillController = async (req, res, next) => {
             return errorResponse(res, "Request body is missing", {}, 400);
         }
 
-        const bill = await Bill.findOne({ _id: billId, created_by: userId });
+        const bill = await Bill.findOne({
+            _id: billId,
+            created_by: userId
+        });
         if (!bill) {
             return errorResponse(res, "Bill does not exist", {}, 404);
         }
@@ -215,8 +241,7 @@ exports.putBillController = async (req, res, next) => {
         }
 
         await Bill.findByIdAndUpdate(
-            billId,
-            {
+            billId, {
                 bill_data_type: type,
                 apartment_id: apartment_id || null,
                 bill_type: bill_type || null,
@@ -230,8 +255,9 @@ exports.putBillController = async (req, res, next) => {
                 additional_cost: addtional_cost,
                 updated_at: new Date(),
                 created_by: userId
-            },
-            { new: true }
+            }, {
+                new: true
+            }
         );
 
         return successResponse(res, "Bill updated successfully");
@@ -239,5 +265,3 @@ exports.putBillController = async (req, res, next) => {
         next(error);
     }
 };
-
-

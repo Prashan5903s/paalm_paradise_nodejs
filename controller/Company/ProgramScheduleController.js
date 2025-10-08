@@ -20,7 +20,9 @@ const {
 exports.getProgramScheduleAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const { contentFolderId } = req.params;
+        const {
+            contentFolderId
+        } = req.params;
 
         const Module = await modules.findById(contentFolderId);
 
@@ -76,22 +78,40 @@ exports.getCreateDataAPI = async (req, res, next) => {
 
         const objectId = new mongoose.Types.ObjectId(userId);
 
-        const regions = await Zone.aggregate([
-            {
-                $match: { created_by: objectId } // filter zones created by this user
+        const regions = await Zone.aggregate([{
+                $match: {
+                    created_by: objectId
+                } // filter zones created by this user
             },
             {
                 $unwind: "$region" // split region array into individual docs
             },
             {
-                $replaceRoot: { newRoot: "$region" } // keep only region data
+                $replaceRoot: {
+                    newRoot: "$region"
+                } // keep only region data
             }
         ]);
 
-        finalData['department'] = await department.find({ created_by: userId, status: true })
-        finalData['designation'] = await designation.find({ company_id: userId, status: true })
-        finalData['group'] = await group.find({ company_id: userId, status: true })
-        finalData['user'] = await user.find({ created_by: userId, status: true })
+        finalData['department'] = await department.find({
+            created_by: userId,
+            status: true
+        })
+        finalData['designation'] = await designation.find({
+            company_id: userId,
+            status: true
+        })
+        finalData['group'] = await group.find({
+            company_id: userId,
+            status: true
+        })
+        finalData['user'] = await user.find({
+            created_by: userId,
+            status: true,
+            user_type: {
+                $ne: "4"
+            }
+        })
         finalData['region'] = regions
 
         return successResponse(res, "Create data fetched successfully", finalData)
@@ -113,7 +133,9 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
             dueType
         } = req.body;
 
-        const { contentFolderId } = req.params;
+        const {
+            contentFolderId
+        } = req.params;
         const userId = req.userId;
 
         // Resolve module, contentFolder, program
@@ -132,7 +154,9 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
 
         const programId = content_folder.program_id;
 
-        const Activity = await activity.find({ module_id: Module._id }).select("_id");
+        const Activity = await activity.find({
+            module_id: Module._id
+        }).select("_id");
         const activityIds = Activity.map(doc => doc._id);
 
         // Create or update ProgramSchedule
@@ -178,7 +202,10 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
         await program.save();
 
         // Manage schedule_types
-        await scheduleType.deleteMany({ schedule_id: program._id, company_id: userId });
+        await scheduleType.deleteMany({
+            schedule_id: program._id,
+            company_id: userId
+        });
 
         if (Array.isArray(targetPairs)) {
             const bulkTypes = [];
@@ -190,9 +217,8 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
                             company_id: userId,
                             schedule_id: program._id,
                             type: pair.target,
-                            type_id: mongoose.Types.ObjectId.isValid(optionId)
-                                ? new mongoose.Types.ObjectId(optionId)
-                                : optionId
+                            type_id: mongoose.Types.ObjectId.isValid(optionId) ?
+                                new mongoose.Types.ObjectId(optionId) : optionId
                         });
                     });
                 }
@@ -203,7 +229,10 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
             }
 
             // Create schedule_users
-            await scheduleUser.deleteMany({ schedule_id: program._id, company_id: userId });
+            await scheduleUser.deleteMany({
+                schedule_id: program._id,
+                company_id: userId
+            });
 
             const schedule_type = await scheduleType.find({
                 company_id: userId,
@@ -213,7 +242,7 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
             const bulkUsers = [];
 
             if (schedule_type && schedule_type.length > 0) {
-                
+
                 for (const item of schedule_type) {
 
                     const type = item.type;
@@ -224,24 +253,41 @@ exports.postProgramScheduleAPI = async (req, res, next) => {
 
                     if (type == 1) {
 
-                        const userDesignation = await user.find({ designation_id: typeId }).select('_id');
+                        const userDesignation = await user.find({
+                            user_type: {
+                                $ne: "4"
+                            },
+                            designation_id: typeId,
+                        }).select('_id');
                         ids = userDesignation.map(u => u._id);
-                    
+
                     } else if (type == 2) {
-                    
-                        const userDepartment = await user.find({ department_id: typeId }).select('_id');
+
+                        const userDepartment = await user.find({
+                            department_id: typeId,
+                            user_type: {
+                                $ne: "4"
+                            }
+                        }).select('_id');
                         ids = userDepartment.map(u => u._id);
-                    
+
                     } else if (type == 3) {
-                    
-                        const userGroup = await group.find({ _id: typeId }).select('_id');
+
+                        const userGroup = await group.find({
+                            _id: typeId
+                        }).select('_id');
                         ids = userGroup.map(g => g._id);
-                    
+
                     } else if (type == 4) {
-                    
-                        const userRegion = await user.find({ region_id: typeId }).select('_id');
+
+                        const userRegion = await user.find({
+                            region_id: typeId,
+                            user_type: {
+                                $ne: "4"
+                            }
+                        }).select('_id');
                         ids = userRegion.map(u => u._id);
-                    
+
                     }
 
                     if (ids.length > 0) {

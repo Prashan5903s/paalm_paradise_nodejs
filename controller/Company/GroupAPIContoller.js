@@ -1,13 +1,18 @@
 const Group = require('../../model/Group')
 const user = require('../../model/User');
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 exports.getGroupAPI = async (req, res, next) => {
     try {
 
         const userId = req.userId;
 
-        const group = await Group.find({ created_by: userId });
+        const group = await Group.find({
+            created_by: userId
+        });
 
         if (!group) {
             return errorResponse(res, "Group does not exist", {}, 404)
@@ -25,7 +30,13 @@ exports.postGroupAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const { name, autoAssign, description, status, users } = req.body;
+        const {
+            name,
+            autoAssign,
+            description,
+            status,
+            users
+        } = req.body;
 
         const group = new Group({
             name,
@@ -52,7 +63,12 @@ exports.getCheckEmpId = async (req, res, next) => {
 
         const data = JSON.parse(req.params.uploadData); // Array of { SRNO, EmpID }
 
-        const users = await user.find({ created_by: userId });
+        const users = await user.find({
+            created_by: userId,
+            user_type: {
+                $ne: "4"
+            }
+        });
 
         const activeCodesMap = new Map(); // Map of code => userId (_id)
 
@@ -94,10 +110,19 @@ exports.putGroupAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
         const groupId = req.params.groupId;
-        const { name, autoAssign, description, status, users } = req.body;
+        const {
+            name,
+            autoAssign,
+            description,
+            status,
+            users
+        } = req.body;
 
         // Check if the group exists and belongs to the user
-        const group = await Group.findOne({ _id: groupId, created_by: userId });
+        const group = await Group.findOne({
+            _id: groupId,
+            created_by: userId
+        });
         if (!group) {
             return errorResponse(res, "Group does not exist", {}, 404);
         }
@@ -116,11 +141,17 @@ exports.putGroupAPI = async (req, res, next) => {
         // Push new users to userId array
         if (Array.isArray(users) && users.length > 0) {
             await Group.findByIdAndUpdate(groupId, {
-                $addToSet: { userId: { $each: users } } // Step 2: insert new users
+                $addToSet: {
+                    userId: {
+                        $each: users
+                    }
+                } // Step 2: insert new users
             });
         }
 
-        return res.status(200).json({ message: "Group updated successfully" });
+        return res.status(200).json({
+            message: "Group updated successfully"
+        });
 
     } catch (error) {
         next(error);

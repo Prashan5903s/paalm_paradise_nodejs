@@ -5,25 +5,49 @@ const userService = require('../../services/userService');
 const bcrypt = require('bcryptjs')
 const Apartment = require('../../model/Apartment')
 // const Maintenance = require('../../model/Maintenance')
-const { encryptDeterministic, hashSearchField } = require('../../util/encryption');
+const {
+    encryptDeterministic,
+    hashSearchField
+} = require('../../util/encryption');
 
-const { hash, normalizeEmail, normalizePhone } = require('../../util/encryption');
-const { successResponse, errorResponse, warningResponse } = require('../../util/response');
+const {
+    hash,
+    normalizeEmail,
+    normalizePhone
+} = require('../../util/encryption');
+const {
+    successResponse,
+    errorResponse,
+    warningResponse
+} = require('../../util/response');
 
 const updateApartmentStatus = async (idArray, userId) => {
     try {
 
         // Step 1: Assign selected apartments
-        await Apartment.updateMany(
-            { _id: { $in: idArray } },
-            { $set: { assigned_to: userId, status: true } }
-        );
+        await Apartment.updateMany({
+            _id: {
+                $in: idArray
+            }
+        }, {
+            $set: {
+                assigned_to: userId,
+                status: true
+            }
+        });
 
         // Step 2: Unassign apartments previously assigned to user but not in the new selection
-        await Apartment.updateMany(
-            { assigned_to: userId, _id: { $nin: idArray } },
-            { $set: { assigned_to: null, status: false } }
-        );
+        await Apartment.updateMany({
+            assigned_to: userId,
+            _id: {
+                $nin: idArray
+            }
+        }, {
+            $set: {
+                assigned_to: null,
+                status: false
+            }
+        });
 
 
     } catch (error) {
@@ -47,7 +71,10 @@ const normalizeCameras = (raw, body) => {
         if (raw.includes("|")) {
             return raw.split(",").map(s => {
                 const [title, ip] = s.split("|");
-                return { title: (title || "").trim(), ip: (ip || "").trim() };
+                return {
+                    title: (title || "").trim(),
+                    ip: (ip || "").trim()
+                };
             }).filter(c => c.title || c.ip);
         }
         return [];
@@ -114,7 +141,12 @@ const pick = (obj, fields) => Object.fromEntries(fields.map(key => [key, obj[key
 exports.getCompanyIndexAPI = async (req, res, next) => {
 
     const userId = req.userId;
-    const company = await User.find({ created_by: userId });
+    const company = await User.find({
+        created_by: userId,
+        user_type: {
+            $ne: "4"
+        }
+    });
 
     res.status(200).json({
         'status': 'Success',
@@ -149,7 +181,9 @@ const sanitizeObjectIds = (data, objectIdFields) => {
         if (Array.isArray(v)) {
             data[f] = v.map(item => {
                 if (item && typeof item === "object") {
-                    const copy = { ...item };
+                    const copy = {
+                        ...item
+                    };
                     Object.keys(copy).forEach(k => {
                         if (copy[k] === "" || copy[k] === undefined || copy[k] === null) copy[k] = null;
                     });
@@ -163,7 +197,11 @@ const sanitizeObjectIds = (data, objectIdFields) => {
 
 // Utility: safe JSON parse
 const safeJSONParse = (s) => {
-    try { return JSON.parse(s); } catch { return null; }
+    try {
+        return JSON.parse(s);
+    } catch {
+        return null;
+    }
 };
 
 // parse indexed multipart like apartment_data[0][tower_id]
@@ -223,7 +261,10 @@ exports.createUserAPI = async (req, res, next) => {
 
         const userExists = await User.findOne({
             email_hash: hash(normalizeEmail(req.body.email)),
-            company_id: userId
+            company_id: userId,
+            user_type: {
+                $ne: "4"
+            }
         });
         if (userExists) {
             return errorResponse(res, 'This email already been taken!', {}, 400);
@@ -231,7 +272,10 @@ exports.createUserAPI = async (req, res, next) => {
 
         const phoneExists = await User.findOne({
             phone_hash: hash(normalizePhone(req.body.phone)),
-            company_id: userId
+            company_id: userId,
+            user_type: {
+                $ne: "4"
+            }
         });
         if (phoneExists) {
             return errorResponse(res, 'This phone already been taken!', {}, 400);
@@ -310,14 +354,17 @@ exports.createUserAPI = async (req, res, next) => {
         updateApartmentStatus(apartmentIds, user._id)
 
         // Roles: accept string or array
-        const roles = Array.isArray(req.body.roles)
-            ? req.body.roles
-            : typeof req.body.roles === 'string' && req.body.roles.trim().length
-                ? req.body.roles.split(',').map(r => r.trim())
-                : [];
+        const roles = Array.isArray(req.body.roles) ?
+            req.body.roles :
+            typeof req.body.roles === 'string' && req.body.roles.trim().length ?
+            req.body.roles.split(',').map(r => r.trim()) : [];
 
         if (roles.length) {
-            const roleDocs = await Role.find({ _id: { $in: roles } });
+            const roleDocs = await Role.find({
+                _id: {
+                    $in: roles
+                }
+            });
             if (roleDocs.length) {
                 const roleUserInserts = roleDocs.map(role => ({
                     user_id: user._id,
@@ -334,7 +381,11 @@ exports.createUserAPI = async (req, res, next) => {
     }
 };
 
-const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = null }) => {
+const processEmployeeCodesForUser = async ({
+    rawCodes,
+    userId,
+    existingUser = null
+}) => {
     let parsedCodes = [];
     try {
         parsedCodes = rawCodes;
@@ -342,11 +393,17 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
             parsedCodes = [parsedCodes];
         }
     } catch {
-        return { success: true, codes: existingUser?.codes || [] };
+        return {
+            success: true,
+            codes: existingUser?.codes || []
+        };
     }
 
     if (parsedCodes.length === 0) {
-        return { success: true, codes: existingUser?.codes || [] };
+        return {
+            success: true,
+            codes: existingUser?.codes || []
+        };
     }
 
 
@@ -355,8 +412,12 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
         .filter(Boolean);
 
     const duplicateUsers = await User.find({
-        // _id: { $ne: userId },
-        'codes.code': { $in: normalizedCodes }
+        user_type: {
+            $ne: "4"
+        },
+        'codes.code': {
+            $in: normalizedCodes
+        }
     }).select('codes');
 
     const foundCodes = new Set();
@@ -404,7 +465,10 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
         }
     }
 
-    return { success: true, codes: updatedExistingCodes };
+    return {
+        success: true,
+        codes: updatedExistingCodes
+    };
 };
 
 // --- updateUserAPI (replace your old function) ---
@@ -419,14 +483,18 @@ exports.updateUserAPI = async (req, res, next) => {
         const existingUserEmail = await User.findOne({
             email_hash: hash(normalizeEmail(req.body.email)),
             company_id: currentUser,
-            _id: { $ne: userId }
+            _id: {
+                $ne: userId
+            }
         });
         if (existingUserEmail) return errorResponse(res, "This email already been taken!", {}, 400);
 
         const existingUserPhone = await User.findOne({
             phone_hash: hash(normalizePhone(req.body.phone)),
             company_id: currentUser,
-            _id: { $ne: userId }
+            _id: {
+                $ne: userId
+            }
         });
         if (existingUserPhone) return errorResponse(res, "This phone already been taken!", {}, 400);
 
@@ -496,13 +564,14 @@ exports.updateUserAPI = async (req, res, next) => {
         if (imageUrl) updateData.photo = imageUrl;
 
         // Roles
-        const roles = Array.isArray(req.body.roles)
-            ? req.body.roles
-            : typeof req.body.roles === "string" && req.body.roles.trim().length
-                ? req.body.roles.split(",").map(r => r.trim())
-                : [];
+        const roles = Array.isArray(req.body.roles) ?
+            req.body.roles :
+            typeof req.body.roles === "string" && req.body.roles.trim().length ?
+            req.body.roles.split(",").map(r => r.trim()) : [];
 
-        await RoleUser.deleteMany({ user_id: userId });
+        await RoleUser.deleteMany({
+            user_id: userId
+        });
         if (roles.length > 0) {
             const roleUserDocs = roles.map(roleId => ({
                 user_id: userId,
@@ -559,7 +628,10 @@ exports.attachNewUserCodeAPI = async (req, res, next) => {
             return errorResponse(res, "User not found", 400);
         }
 
-        return successResponse(res, "New Employee ID added as Active status.", { codes: updatedUser.codes, emp_id: updatedUser.emp_id });
+        return successResponse(res, "New Employee ID added as Active status.", {
+            codes: updatedUser.codes,
+            emp_id: updatedUser.emp_id
+        });
     } catch (error) {
         next(error);
     }
@@ -591,7 +663,9 @@ exports.markActiveUserCodeAPI = async (req, res, next) => {
 
         await existingUser.save();
 
-        return successResponse(res, `Employee ID changed for ${existingUser.first_name}`, { codes: existingUser.codes });
+        return successResponse(res, `Employee ID changed for ${existingUser.first_name}`, {
+            codes: existingUser.codes
+        });
     } catch (error) {
         next(error);
     }
@@ -607,7 +681,9 @@ exports.updateStatusAPI = async (req, res, next) => {
         user.status = req.body.status;
         await user.save();
 
-        return successResponse(res, `${user.first_name} account status marked as ${(user.status ? 'Active' : 'Inactive')} `, { current_status: user.status });
+        return successResponse(res, `${user.first_name} account status marked as ${(user.status ? 'Active' : 'Inactive')} `, {
+            current_status: user.status
+        });
     } catch (error) {
         next(error);
     }
@@ -617,19 +693,31 @@ exports.checkEmailCompanyAPI = async (req, res, next) => {
     const email = req.params.email;
     const id = req.params.id;
 
-    const query = { email: email };
+    const query = {
+        email: email
+    };
     if (id && id !== 'null' && id !== 'undefined') {
-        query._id = { $ne: id };
+        query._id = {
+            $ne: id
+        };
     }
 
     const userExist = await User.findOne(query);
-    res.json({ exists: !!userExist }); // returns { exists: true } or { exists: false }
+    res.json({
+        exists: !!userExist
+    }); // returns { exists: true } or { exists: false }
 };
 
 exports.editAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const user = await User.findOne({ _id: req.params.id, created_by: userId }).populate({
+        const user = await User.findOne({
+            _id: req.params.id,
+            user_type: {
+                $ne: "4"
+            },
+            created_by: userId
+        }).populate({
             path: 'roles',
             // populate: {
             //   path: 'role_id', // Assuming RoleUser has `role_id`
@@ -680,9 +768,16 @@ exports.deleteAPI = async (req, res, next) => {
 
         const user_id = req.params.id;
 
-        const user = await User.findOne({ _id: user_id });
+        const user = await User.findOne({
+            _id: user_id,
+            user_type: {
+                $ne: "4"
+            }
+        });
 
-        await Apartment.findOneAndUpdate({ assigned_to: user_id }, {
+        await Apartment.findOneAndUpdate({
+            assigned_to: user_id
+        }, {
             status: false,
             assigned_to: null
         })
@@ -700,7 +795,9 @@ exports.deleteAPI = async (req, res, next) => {
 exports.searchUserAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const user = await User.findOne({ email_hash: hash(normalizeEmail('alok@gmail.com')) });
+        const user = await User.findOne({
+            email_hash: hash(normalizeEmail('alok@gmail.com'))
+        });
 
         return successResponse(res, "Data loaded", user);
     } catch (error) {
@@ -714,7 +811,10 @@ exports.importAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const { chunk, roles } = req.body;
+        const {
+            chunk,
+            roles
+        } = req.body;
         if (!Array.isArray(chunk)) {
             return errorResponse(res, 'Invalid data format', 400);
         }

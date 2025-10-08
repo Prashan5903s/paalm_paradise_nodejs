@@ -2,35 +2,59 @@ const RoleUser = require('../../model/RoleUser')
 const Complain = require('../../model/Complain')
 const User = require('../../model/User');
 const ComplainUser = require('../../model/ComplainUser')
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 exports.getComplainController = async (req, res, next) => {
     try {
 
         const userId = req.userId;
 
-        const users = await User.find({ created_by: userId }).select('_id');
+        const users = await User.find({
+            created_by: userId,
+            user_type: {
+                $ne: "4"
+            }
+        }).select('_id');
         const userIds = users.map(u => u._id);
 
-        const complain = await Complain.aggregate([
-            {
-                $match: { created_by: { $in: userIds } }
+        const complain = await Complain.aggregate([{
+                $match: {
+                    created_by: {
+                        $in: userIds
+                    }
+                }
             },
             {
                 $lookup: {
                     from: "complain_users",
-                    let: { complainId: "$_id" },
-                    pipeline: [
-                        { $match: { $expr: { $eq: ["$complain_id", "$$complainId"] } } },
-                        { $sort: { created_at: 1 } } // oldest → latest
+                    let: {
+                        complainId: "$_id"
+                    },
+                    pipeline: [{
+                            $match: {
+                                $expr: {
+                                    $eq: ["$complain_id", "$$complainId"]
+                                }
+                            }
+                        },
+                        {
+                            $sort: {
+                                created_at: 1
+                            }
+                        } // oldest → latest
                     ],
                     as: "complain_users"
                 }
             },
             {
                 $addFields: {
-                    all_complain_users: "$complain_users",            // पूरा data
-                    latest_complain_user: { $last: "$complain_users" } // 👈 सबसे आखिरी वाला (latest)
+                    all_complain_users: "$complain_users", // पूरा data
+                    latest_complain_user: {
+                        $last: "$complain_users"
+                    } // 👈 सबसे आखिरी वाला (latest)
                 }
             },
             {
@@ -73,14 +97,21 @@ exports.createComplainController = async (req, res, next) => {
         const roleId = "68c01730556298d2b76244ac";
 
         // 1. Find all role_user entries with the specific role
-        const roleUsers = await RoleUser.find({ role_id: roleId }).select('user_id');
+        const roleUsers = await RoleUser.find({
+            role_id: roleId
+        }).select('user_id');
 
         // 2. Extract user_ids
         const userIds = roleUsers.map(r => r.user_id);
 
         // 3. Fetch users created by userId and in role_user
         const users = await User.find({
-            _id: { $in: userIds },
+            _id: {
+                $in: userIds
+            },
+            user_type: {
+                $ne: "4"
+            },
             created_by: userId
         });
 
@@ -103,7 +134,11 @@ exports.postComplainController = async (req, res, next) => {
         const id = req.params.id;
         const code = req.params.code;
 
-        const { status, user, remark } = req.body;
+        const {
+            status,
+            user,
+            remark
+        } = req.body;
 
         const complain = await Complain.findById(id)
 
@@ -120,7 +155,9 @@ exports.postComplainController = async (req, res, next) => {
                 },
             })
 
-            const complain_user = await ComplainUser.findOne({ complain_id: complain._id });
+            const complain_user = await ComplainUser.findOne({
+                complain_id: complain._id
+            });
 
             if (!complain_user) {
 

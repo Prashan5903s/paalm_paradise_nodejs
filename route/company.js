@@ -19,6 +19,7 @@ const apartmentTypeController = require('../controller/Company/ApartmentTypeCont
 const ticketTypeController = require('../controller/Company/TicketTypeController')
 const visitorTypeController = require('../controller/Company/VisitorTypeController')
 const reportController = require('../controller/Company/ReportController')
+const tenantController = require('../controller/Company/TenantAPIController')
 
 const createUpload = require('../util/upload');
 
@@ -35,6 +36,13 @@ const activityUpload = createUpload(
     ],
     'bills', // Folder inside /public
     500 // Max size in MB
+);
+
+const {
+    middleware: imageUpload
+} = createUpload(
+    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+    'uploads/images' // directory inside /public/
 );
 
 router.get('/app/menu/label/listing/:sn', isAuth, appMenuController.getAppMenuCompanyListAPI);
@@ -126,5 +134,11 @@ router.get('/table/payment/report/:start/:end/:type', isAuth, reportController.g
 
 //This route is for financial report
 router.get("/table/financial/report/:start/:end/:type", isAuth, reportController.getFinancialReport)
+
+//This route is for tenant
+router.get('/tenant', isAuth, tenantController.getTenantAPIController)
+router.get('/tenant/edit/:id', isAuth, tenantController.getEditTenantAPI)
+router.post('/tenant', isAuth, imageUpload('photo'), tenantController.postTenantAPIController)
+router.put('/tenant/update/:id', imageUpload('photo'), isAuth, tenantController.putTenantController)
 
 module.exports = router;

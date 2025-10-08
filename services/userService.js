@@ -8,20 +8,38 @@ const Department = require('../model/Department');
 const Designation = require('../model/Designation');
 const ParticipationType = require('../model/ParticipationType');
 const bcrypt = require('bcryptjs');
-const { hash, normalizeEmail, normalizePhone } = require('../util/encryption');
+const {
+  hash,
+  normalizeEmail,
+  normalizePhone
+} = require('../util/encryption');
 
 const importUsers = async (res, userId, chunk, roleIds = []) => {
   try {
     const emails = chunk.map(u => normalizeEmail(u.Email)).filter(Boolean);
     const emailHashes = emails.map(email => hash(email));
 
-    const existingEmailUsers = await User.find({ email_hash: { $in: emailHashes } }).select('email_hash').lean();
+    const existingEmailUsers = await User.find({
+      email_hash: {
+        $in: emailHashes
+      },
+      user_type: {
+        $ne: "4"
+      }
+    }).select('email_hash').lean();
     const existingEmailHashes = new Set(existingEmailUsers.map(u => u.email_hash));
 
     const phones = chunk.map(u => normalizePhone(String(u.PhoneNo || ''))).filter(Boolean);
     const phoneHashes = phones.map(phone => hash(phone));
 
-    const existingPhoneUsers = await User.find({ phone_hash: { $in: phoneHashes } }).select('phone_hash').lean();
+    const existingPhoneUsers = await User.find({
+      phone_hash: {
+        $in: phoneHashes
+      },
+      user_type: {
+        $ne: "4"
+      }
+    }).select('phone_hash').lean();
     const existingPhoneHashes = new Set(existingPhoneUsers.map(u => u.phone_hash));
 
     const usersToInsert = [];
@@ -58,7 +76,10 @@ const importUsers = async (res, userId, chunk, roleIds = []) => {
       const location = await getLocationByName(u.Country, u.State, u.City);
 
       if (location.errors) {
-        resultWithStatus.push({ ...safeUser, errors: location.errors });
+        resultWithStatus.push({
+          ...safeUser,
+          errors: location.errors
+        });
         continue;
       }
 
@@ -82,7 +103,10 @@ const importUsers = async (res, userId, chunk, roleIds = []) => {
           }
 
           if (Object.keys(errors).length > 0) {
-            resultWithStatus.push({ ...safeUser, errors });
+            resultWithStatus.push({
+              ...safeUser,
+              errors
+            });
             continue;
           }
 
@@ -127,10 +151,18 @@ const importUsers = async (res, userId, chunk, roleIds = []) => {
 
 
 
-          resultWithStatus.push({ ...safeUser, errors: {} });
+          resultWithStatus.push({
+            ...safeUser,
+            errors: {}
+          });
         } catch (innerErr) {
           console.error('User insert error:', innerErr);
-          resultWithStatus.push({ ...safeUser, errors: { error: 'Error processing this user' } });
+          resultWithStatus.push({
+            ...safeUser,
+            errors: {
+              error: 'Error processing this user'
+            }
+          });
         }
       }
     }
@@ -140,7 +172,11 @@ const importUsers = async (res, userId, chunk, roleIds = []) => {
       insertedUsers = await User.insertMany(usersToInsert);
 
       if (roleIds.length > 0) {
-        const roleDocs = await Role.find({ _id: { $in: roleIds } });
+        const roleDocs = await Role.find({
+          _id: {
+            $in: roleIds
+          }
+        });
 
         const roleUserInserts = [];
         for (const user of insertedUsers) {
@@ -178,7 +214,10 @@ const importUsers = async (res, userId, chunk, roleIds = []) => {
 
 const getOrCreateDepartment = async (department, userId) => {
   try {
-    let departments = await Department.findOne({ name: department, created_by: userId });
+    let departments = await Department.findOne({
+      name: department,
+      created_by: userId
+    });
     if (!departments) {
       departments = new Department({
         name: department,
@@ -203,7 +242,9 @@ const getLocationByName = async (countryName, stateName, cityName) => {
 
   if (!countryDoc) {
     errors.country = `Country '${countryName}' not found`;
-    return { errors };
+    return {
+      errors
+    };
   }
 
   const stateDoc = countryDoc.states.find(
@@ -212,7 +253,9 @@ const getLocationByName = async (countryName, stateName, cityName) => {
 
   if (!stateDoc) {
     errors.state = `State '${stateName}' not found in '${countryName}'`;
-    return { errors };
+    return {
+      errors
+    };
   }
 
   const cityDoc = stateDoc.cities.find(
@@ -221,7 +264,9 @@ const getLocationByName = async (countryName, stateName, cityName) => {
 
   if (!cityDoc) {
     errors.city = `City '${cityName}' not found in '${stateName}'`;
-    return { errors };
+    return {
+      errors
+    };
   }
 
   return {
@@ -232,7 +277,11 @@ const getLocationByName = async (countryName, stateName, cityName) => {
   };
 };
 
-const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = null }) => {
+const processEmployeeCodesForUser = async ({
+  rawCodes,
+  userId,
+  existingUser = null
+}) => {
   let parsedCodes = [];
   try {
     parsedCodes = rawCodes;
@@ -240,11 +289,17 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
       parsedCodes = [parsedCodes];
     }
   } catch {
-    return { success: true, codes: existingUser?.codes || [] };
+    return {
+      success: true,
+      codes: existingUser?.codes || []
+    };
   }
 
   if (parsedCodes.length === 0) {
-    return { success: true, codes: existingUser?.codes || [] };
+    return {
+      success: true,
+      codes: existingUser?.codes || []
+    };
   }
 
   const normalizedCodes = parsedCodes
@@ -252,7 +307,12 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
     .filter(Boolean);
 
   const duplicateUsers = await User.find({
-    'codes.code': { $in: normalizedCodes }
+    'codes.code': {
+      $in: normalizedCodes
+    },
+    user_type: {
+      $ne: "4"
+    }
   }).select('codes');
 
   const foundCodes = new Set();
@@ -296,15 +356,26 @@ const processEmployeeCodesForUser = async ({ rawCodes, userId, existingUser = nu
     }
   }
 
-  return { success: true, codes: updatedExistingCodes };
+  return {
+    success: true,
+    codes: updatedExistingCodes
+  };
 };
 
 const getUserStats = async (userId) => {
   try {
     const [total, active, inactive] = await Promise.all([
-      User.countDocuments({ company_id: userId }),
-      User.countDocuments({ company_id: userId, status: true }),
-      User.countDocuments({ company_id: userId, status: false }),
+      User.countDocuments({
+        company_id: userId
+      }),
+      User.countDocuments({
+        company_id: userId,
+        status: true
+      }),
+      User.countDocuments({
+        company_id: userId,
+        status: false
+      }),
     ]);
 
     return {
@@ -384,14 +455,19 @@ const getOrCreateBranch = async (zoneId, region = "", branch = "", userId) => {
       return ["", "", true, ""];
     }
 
-    const zone = await Zone.findOne({ _id: zoneId, created_by: userId });
+    const zone = await Zone.findOne({
+      _id: zoneId,
+      created_by: userId
+    });
 
     if (!zone) {
       return ["", "", false, "Zone not found for this user"];
     }
 
     const otherZones = await Zone.find({
-      _id: { $ne: zoneId },
+      _id: {
+        $ne: zoneId
+      },
       created_by: userId,
     });
 
