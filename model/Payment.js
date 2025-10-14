@@ -4,7 +4,7 @@ const Counter = require('../model/Counter');
 const paymentSchema = new mongoose.Schema({
     bill_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Bill",   // ✅ Relation with Bill model
+        ref: "Bill", // ✅ Relation with Bill model
         required: true
     },
     user_bill_id: {
@@ -13,10 +13,10 @@ const paymentSchema = new mongoose.Schema({
     },
     receipt_no: {
         type: String,
-        unique: true,  // ✅ ensures no duplicate receipt numbers
+        unique: true, // ✅ ensures no duplicate receipt numbers
     },
     amount: {
-        type: Number,  // ✅ Better as Number, not String
+        type: Number, // ✅ Better as Number, not String
         required: true
     },
     bank_name: {
@@ -38,6 +38,10 @@ const paymentSchema = new mongoose.Schema({
     cheque_date: Date,
     demand_draft_no: String,
     demand_draft_date: Date,
+    payment_mode: {
+        type: String,
+        mxLength: 10
+    },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
@@ -53,9 +57,14 @@ paymentSchema.pre('save', async function (next) {
 
     // Get next sequence
     const counter = await Counter.findByIdAndUpdate(
-        'receipt',
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        'receipt', {
+            $inc: {
+                seq: 1
+            }
+        }, {
+            new: true,
+            upsert: true
+        }
     );
 
     const seq = counter.seq;

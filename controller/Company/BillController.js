@@ -16,19 +16,27 @@ exports.getBillData = async (req, res, next) => {
 
         const type = req.params.type;
 
-        const bill = await Bill.find({
-            created_by: userId,
-            bill_data_type: type
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        })
+        const bills = await Bill.find({
+                created_by: userId,
+                bill_data_type: type
+            })
+            .populate({
+                path: 'apartment_id',
+                select: 'apartment_no apartment_area assigned_to',
+                populate: {
+                    path: 'assigned_to',
+                }
+            })
+            .populate('bill_type')
+            .populate({
+                path: 'payments',
+            });
 
-        if (!bill) {
+        if (!bills) {
             return errorResponse(res, "Bill does not exist", {}, 404)
         }
 
-        return successResponse(res, "Bill data fetched successfully", bill)
+        return successResponse(res, "Bill data fetched successfully", bills)
 
     } catch (error) {
         next(error)
@@ -115,7 +123,7 @@ exports.postBillController = async (req, res, next) => {
             additional_cost = addtional_cost
         }
 
-        // ✅ Create Bill
+        // Create Bill
         const bill = new Bill({
             bill_data_type: type,
             user_id,
@@ -265,3 +273,33 @@ exports.putBillController = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getInvoicePDFPage = async (req, res, next) => {
+    try {
+
+        const invoiceNo = req?.params?.invoiceNo;
+
+        const bill = await Bill.findOne({
+                invoice_no: invoiceNo
+            }).populate({
+                path: 'apartment_id',
+                select: 'apartment_no apartment_area assigned_to',
+                populate: {
+                    path: 'assigned_to',
+                }
+            })
+            .populate('bill_type')
+            .populate({
+                path: 'payments',
+            })
+
+        if (!bill) {
+            return errorResponse(res, "Bill does not exist", {}, 404)
+        }
+
+        return successResponse(res, "Bill fetched successfully", bill)
+
+    } catch (error) {
+        next(error)
+    }
+}

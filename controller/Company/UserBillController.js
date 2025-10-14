@@ -7,7 +7,10 @@ const Payment = require('../../model/Payment');
 const Maintenance = require('../../model/Maintenance')
 const mongoose = require('mongoose')
 
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 exports.getUserBillController = async (req, res, next) => {
     try {
@@ -18,17 +21,22 @@ exports.getUserBillController = async (req, res, next) => {
 
         let data = {};
 
-        const userBills = await UserBill.find({ bill_id: billId }).select('apartment_id');
+        const userBills = await UserBill.find({
+            bill_id: billId
+        }).select('apartment_id');
 
         const apartmentIds = userBills.map(b => b.apartment_id);
 
-        const apartments = await Apartment.aggregate([
-            {
+        const apartments = await Apartment.aggregate([{
                 $match: {
                     created_by: new mongoose.Types.ObjectId(userId),
                     status: true,
-                    assigned_to: { $ne: null },
-                    _id: { $in: apartmentIds.map(id => new mongoose.Types.ObjectId(id)) }
+                    assigned_to: {
+                        $ne: null
+                    },
+                    _id: {
+                        $in: apartmentIds.map(id => new mongoose.Types.ObjectId(id))
+                    }
                 }
             },
             {
@@ -45,7 +53,9 @@ exports.getUserBillController = async (req, res, next) => {
                         $filter: {
                             input: "$user_bills",
                             as: "ub",
-                            cond: { $eq: ["$$ub.bill_id", new mongoose.Types.ObjectId(billId)] }
+                            cond: {
+                                $eq: ["$$ub.bill_id", new mongoose.Types.ObjectId(billId)]
+                            }
                         }
                     }
                 }
@@ -70,12 +80,13 @@ exports.getUserBillController = async (req, res, next) => {
                                     "$$ub",
                                     {
                                         bill: {
-                                            $arrayElemAt: [
-                                                {
+                                            $arrayElemAt: [{
                                                     $filter: {
                                                         input: "$bill_details",
                                                         as: "bd",
-                                                        cond: { $eq: ["$$bd._id", "$$ub.bill_id"] }
+                                                        cond: {
+                                                            $eq: ["$$bd._id", "$$ub.bill_id"]
+                                                        }
                                                     }
                                                 },
                                                 0
@@ -89,20 +100,24 @@ exports.getUserBillController = async (req, res, next) => {
                 }
             },
             {
-                $project: { bill_details: 0 }
+                $project: {
+                    bill_details: 0
+                }
             },
             // bring payments related to user_bills
             {
                 $lookup: {
                     from: "payments",
-                    let: { userBillIds: "$user_bills._id" },
-                    pipeline: [
-                        {
-                            $match: {
-                                $expr: { $in: ["$user_bill_id", "$$userBillIds"] }
+                    let: {
+                        userBillIds: "$user_bills._id"
+                    },
+                    pipeline: [{
+                        $match: {
+                            $expr: {
+                                $in: ["$user_bill_id", "$$userBillIds"]
                             }
                         }
-                    ],
+                    }],
                     as: "payments"
                 }
             },
@@ -120,7 +135,9 @@ exports.getUserBillController = async (req, res, next) => {
                                             $filter: {
                                                 input: "$payments",
                                                 as: "p",
-                                                cond: { $eq: ["$$p.user_bill_id", "$$ub._id"] }
+                                                cond: {
+                                                    $eq: ["$$p.user_bill_id", "$$ub._id"]
+                                                }
                                             }
                                         }
                                     }
@@ -131,7 +148,9 @@ exports.getUserBillController = async (req, res, next) => {
                 }
             },
             {
-                $project: { payments: 0 } // cleanup: remove temp joined array
+                $project: {
+                    payments: 0
+                } // cleanup: remove temp joined array
             },
             // bring assigned user details
             {
@@ -150,7 +169,10 @@ exports.getUserBillController = async (req, res, next) => {
             }
         ]);
 
-        const payment = await Payment.find({ created_by: userId, bill_id: billId })
+        const payment = await Payment.find({
+            created_by: userId,
+            bill_id: billId
+        })
 
         if (!apartments || !payment) {
             return errorResponse(res, 'User bill does not exist', {}, 404)
@@ -197,6 +219,7 @@ exports.postUserBillController = async (req, res, next) => {
             bill_id: billId,
             cheque_date,
             demand_draft_no,
+            payment_mode: payment_mode,
             demand_draft_date,
             paid_remark,
             neft_no,
@@ -206,7 +229,7 @@ exports.postUserBillController = async (req, res, next) => {
 
         await payment.save();
 
-        return successResponse(res, "Payment done successfully");
+        return successResponse(res, "Payment saved successfully");
     } catch (error) {
         next(error);
     }

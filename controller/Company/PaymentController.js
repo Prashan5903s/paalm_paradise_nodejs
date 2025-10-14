@@ -25,6 +25,7 @@ exports.postPaymentController = async (req, res, next) => {
             amount,
             bill_id: billId,
             cheque_no,
+            payment_mode,
             cheque_date,
             demand_draft_no,
             paid_remark,

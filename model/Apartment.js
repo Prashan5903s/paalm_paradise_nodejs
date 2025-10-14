@@ -28,7 +28,7 @@ const apartmentSchema = new mongoose.Schema({
     },
     assigned_to: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "users",
         required: false,
         default: null
     },
