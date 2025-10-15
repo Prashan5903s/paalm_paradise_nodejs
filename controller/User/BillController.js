@@ -1,6 +1,7 @@
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const toWords = require("number-to-words");
 
 const UserBill = require("../../model/UserBill");
 const Bill = require("../../model/Bill");
@@ -96,7 +97,7 @@ exports.getBillController = async (req, res, next) => {
 
 exports.downloadInvoicePDF = async (req, res, next) => {
     try {
-        
+
         const invoiceNo = req.params?.invoiceNo;
 
         if (!invoiceNo) {
@@ -230,9 +231,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         doc.moveDown(1.5);
 
         // ==== AMOUNT IN WORDS ====
-        const {
-            toWords
-        } = await import("number-to-words");
+
         const amountInWords = toWords(total)
             .replace(/\b\w/g, (c) => c.toUpperCase())
             .trim();
