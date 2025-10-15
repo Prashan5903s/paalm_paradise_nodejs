@@ -274,32 +274,3 @@ exports.putBillController = async (req, res, next) => {
     }
 };
 
-exports.getInvoicePDFPage = async (req, res, next) => {
-    try {
-
-        const invoiceNo = req?.params?.invoiceNo;
-
-        const bill = await Bill.findOne({
-                invoice_no: invoiceNo
-            }).populate({
-                path: 'apartment_id',
-                select: 'apartment_no apartment_area assigned_to',
-                populate: {
-                    path: 'assigned_to',
-                }
-            })
-            .populate('bill_type')
-            .populate({
-                path: 'payments',
-            })
-
-        if (!bill) {
-            return errorResponse(res, "Bill does not exist", {}, 404)
-        }
-
-        return successResponse(res, "Bill fetched successfully", bill)
-
-    } catch (error) {
-        next(error)
-    }
-}

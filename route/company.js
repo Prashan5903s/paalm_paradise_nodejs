@@ -141,7 +141,4 @@ router.get('/tenant/edit/:id', isAuth, tenantController.getEditTenantAPI)
 router.post('/tenant', isAuth, imageUpload('photo'), tenantController.postTenantAPIController)
 router.put('/tenant/update/:id', imageUpload('photo'), isAuth, tenantController.putTenantController)
 
-//This route is for invoice
-router.get('/invoice/pdf/page/:invoiceNo', isAuth, billController.getInvoicePDFPage)
-
 module.exports = router;
