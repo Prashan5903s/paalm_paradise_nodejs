@@ -104,15 +104,11 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         if (!invoiceNo)
             return errorResponse(res, "Invoice number is required", {}, 400);
 
-        const bill = await Bill.findOne({
-                invoice_no: invoiceNo
-            })
+        const bill = await Bill.findOne({ invoice_no: invoiceNo })
             .populate({
                 path: "apartment_id",
                 select: "apartment_no apartment_area assigned_to",
-                populate: {
-                    path: "assigned_to"
-                },
+                populate: { path: "assigned_to" },
             })
             .populate("bill_type")
             .populate("payments");
@@ -122,15 +118,10 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         // ==== PATH SETUP ====
         const baseDir = path.resolve(__dirname, "../../");
         const invoicesDir = path.join(baseDir, "public/invoices");
-        if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, {
-            recursive: true
-        });
+        if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
 
         const filePath = path.join(invoicesDir, `invoice_${invoiceNo}.pdf`);
-        const doc = new PDFDocument({
-            margin: 50,
-            size: "A4"
-        });
+        const doc = new PDFDocument({ margin: 50, size: "A4" });
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
@@ -140,9 +131,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         });
         const logoBuffer = Buffer.from(response.data, "binary");
 
-        doc.image(logoBuffer, 60, 40, {
-            width: 120
-        });
+        doc.image(logoBuffer, 60, 40, { width: 120 });
 
         doc.fontSize(10).fillColor("#333")
             .text("Zoo Deoria By Pass,", 60, 95)
@@ -161,9 +150,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
             .text(`Date Due: ${new Date(bill.bill_due_date).toLocaleDateString("en-GB")}`, boxX + 10, boxY + 55);
 
         // ==== TITLE ====
-        doc.fontSize(18).fillColor("#000").text("Invoice", 0, 150, {
-            align: "center"
-        });
+        doc.fontSize(18).fillColor("#000").text("Invoice", 0, 150, { align: "center" });
 
         // ==== BILL INFO ====
         const user = bill.apartment_id?.assigned_to || {};
@@ -176,31 +163,17 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
         // Bill From
         doc.fontSize(10).fillColor("#444")
-            .text("Paalm Paradise", leftX, topY + 20, {
-                width: 200
-            })
-            .text("Talramgarh, Deoria Bypass Road", leftX, topY + 35, {
-                width: 200
-            })
-            .text("Gorakhpur, Uttar Pradesh 273016", leftX, topY + 50, {
-                width: 200
-            })
+            .text("Paalm Paradise", leftX, topY + 20, { width: 200 })
+            .text("Talramgarh, Deoria Bypass Road", leftX, topY + 35, { width: 200 })
+            .text("Gorakhpur, Uttar Pradesh 273016", leftX, topY + 50, { width: 200 })
             .text("+91 9513369620", leftX, topY + 65);
 
         // Bill To
-        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, rightX, topY + 20, {
-                width: 200
-            })
-            .text(user.email || "", rightX, topY + 35, {
-                width: 200
-            })
-            .text(user.phone || "", rightX, topY + 50, {
-                width: 200
-            })
+        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, rightX, topY + 20, { width: 200 })
+            .text(user.email || "", rightX, topY + 35, { width: 200 })
+            .text(user.phone || "", rightX, topY + 50, { width: 200 })
             .text(`${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`,
-                rightX, topY + 65, {
-                    width: 200
-                });
+                rightX, topY + 65, { width: 200 });
 
         // ==== TABLE ====
         const startY = 300;
@@ -219,9 +192,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         doc.fillColor("#000").fontSize(10).font("Helvetica-Bold")
             .text("S.No", cols[0] + 10, startY + 7)
             .text("Description", cols[1] + 10, startY + 7)
-            .text("Amount", cols[2] + 10, startY + 7, {
-                align: "right"
-            });
+            .text("Amount", cols[2] + 10, startY + 7, { align: "right" });
 
         // Table Rows
         let y = startY + 30;
@@ -233,9 +204,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
             doc.fillColor("#000").fontSize(10).font("Helvetica");
             doc.text(i + 1, cols[0] + 10, y)
                 .text(p.description || bill.bill_type?.name || "Utility Bill", cols[1] + 10, y)
-                .text(`₹${formatINR(p.amount)}`, cols[2] + 10, y, {
-                    align: "right"
-                });
+                .text(`₹${formatINR(p.amount)}`, cols[2] + 10, y, { align: "right" });
             y += 25;
         });
 
@@ -243,9 +212,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).stroke();
         doc.fontSize(11).font("Helvetica-Bold")
             .text("Total:", cols[1] + 10, y + 10)
-            .text(`₹${formatINR(total)}`, cols[2] + 10, y + 10, {
-                align: "right"
-            });
+            .text(`₹${formatINR(total)}`, cols[2] + 10, y + 10, { align: "right" });
 
         // Amount in Words
         const words = toWords(total).replace(/\b\w/g, (c) => c.toUpperCase());
