@@ -98,140 +98,162 @@ exports.getBillController = async (req, res, next) => {
 // ========== PDF DOWNLOAD CONTROLLER ==========
 
 exports.downloadInvoicePDF = async (req, res, next) => {
-  try {
-    const invoiceNo = req.params?.invoiceNo;
-    if (!invoiceNo)
-      return errorResponse(res, "Invoice number is required", {}, 400);
+    try {
+        const invoiceNo = req.params?.invoiceNo;
+        if (!invoiceNo)
+            return errorResponse(res, "Invoice number is required", {}, 400);
 
-    const bill = await Bill.findOne({ invoice_no: invoiceNo })
-      .populate({
-        path: "apartment_id",
-        select: "apartment_no apartment_area assigned_to",
-        populate: { path: "assigned_to" },
-      })
-      .populate("bill_type")
-      .populate("payments");
+        const bill = await Bill.findOne({
+                invoice_no: invoiceNo
+            })
+            .populate({
+                path: "apartment_id",
+                select: "apartment_no apartment_area assigned_to",
+                populate: {
+                    path: "assigned_to"
+                },
+            })
+            .populate("bill_type")
+            .populate("payments");
 
-    if (!bill) return errorResponse(res, "Bill does not exist", {}, 404);
+        if (!bill) return errorResponse(res, "Bill does not exist", {}, 404);
 
-    // ==== DIRECTORY SETUP ====
-    const baseDir = path.resolve(__dirname, "../../");
-    const invoicesDir = path.join(baseDir, "public/invoices");
-    if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, { recursive: true });
-
-    const filePath = path.join(invoicesDir, `invoice_${invoiceNo}.pdf`);
-    const doc = new PDFDocument({ margin: 50, size: "A4" });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    // ==== HEADER ====
-    const logoPath = path.join(baseDir, "public/images/logo.png");
-    const headerY = 50;
-
-    if (fs.existsSync(logoPath)) {
-      doc.image(logoPath, 60, headerY, { width: 100 });
-    }
-
-    doc.fontSize(11).fillColor("#333")
-      .text("Zoo Deoria By Pass,", 60, headerY + 60)
-      .text("Paalm Paradise, near Gorakhpur,", 60)
-      .text("Uttar Pradesh 273016", 60);
-
-    // Invoice info box
-    doc.rect(320, 40, 220, 90).fill("#f4f4f4").stroke();
-    doc.fillColor("#000")
-      .fontSize(14).text(`Invoice #${bill.invoice_no}`, 330, 50)
-      .fontSize(11)
-      .text(`Date Issued: ${new Date(bill.bill_date).toLocaleDateString("en-GB")}`, 330, 75)
-      .text(`Date Due: ${new Date(bill.bill_due_date).toLocaleDateString("en-GB")}`, 330, 95);
-
-    // ==== TITLE ====
-    doc.fontSize(18).fillColor("#000").text("Invoice", { align: "center" });
-    doc.moveDown(1.5);
-
-    // ==== BILL FROM & BILL TO ====
-    const user = bill.apartment_id?.assigned_to || {};
-
-    doc.fontSize(13).text("Bill From:", 60, 160);
-    doc.fontSize(13).text("Bill To:", 320, 160);
-
-    // Bill From
-    doc.fontSize(11).fillColor("#444")
-      .text("Paalm Paradise", 60, 180, { width: 200 })
-      .text("Talramgarh, Deoria Bypass Road", 60)
-      .text("Gorakhpur, Uttar Pradesh 273016", 60)
-      .text("+91 9513369620", 60);
-
-    // Bill To
-    doc.text(`${user.first_name || ""} ${user.last_name || ""}`, 320, 180, { width: 200 })
-      .text(user.email || "", 320)
-      .text(user.phone || "", 320)
-      .text(`${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`, 320);
-
-    doc.moveDown(3);
-
-    // ==== TABLE HEADER ====
-    const tableTop = doc.y + 20;
-    const colSno = 75;
-    const colQty = 160;
-    const colDesc = 220;
-    const colAmount = 460;
-
-    doc.rect(60, tableTop, 480, 25).fill("#f4f4f4").stroke();
-    doc.fillColor("#000").fontSize(11)
-      .text("S.No", colSno, tableTop + 7)
-      .text("Qty", colQty, tableTop + 7)
-      .text("Description", colDesc, tableTop + 7)
-      .text("Amount", colAmount, tableTop + 7, { align: "right" });
-
-    // ==== TABLE CONTENT ====
-    let y = tableTop + 30;
-    let total = 0;
-    const formatINR = (num) => num.toLocaleString("en-IN");
-
-    bill.payments.forEach((p, i) => {
-      total += p.amount;
-      doc.fontSize(11).fillColor("#000");
-      doc.text(`${i + 1}`, colSno, y);
-      doc.text("1", colQty, y);
-      doc.text(p.description || bill.bill_type?.name || "Utility Bill", colDesc, y);
-      doc.text(`₹${formatINR(p.amount)}`, colAmount, y, { align: "right" });
-      y += 25;
-    });
-
-    // ==== TOTAL ====
-    doc.moveTo(60, y).lineTo(540, y).stroke();
-    doc.fontSize(12)
-      .text("Total:", 400, y + 5)
-      .text(`₹${formatINR(total)}`, 460, y + 5, { align: "right" });
-
-    // ==== AMOUNT IN WORDS ====
-    const amountInWords = toWords(total).replace(/\b\w/g, c => c.toUpperCase()).trim();
-    doc.moveDown(2);
-    doc.fontSize(11).fillColor("#333")
-      .text(`Total Amount In Words: INR ${amountInWords} Rupees Only`, 60);
-
-    // ==== FOOTER ====
-    doc.fontSize(10).fillColor("#555")
-      .text("Thank you for your payment!", 0, doc.page.height - 50, { align: "center" });
-
-    doc.end();
-
-    // ==== SEND PDF ====
-    stream.on("finish", () => {
-      res.download(filePath, `Invoice_${invoiceNo}.pdf`, (err) => {
-        fs.unlink(filePath, (unlinkErr) => {
-          if (unlinkErr) console.error("Error deleting temp file:", unlinkErr);
+        // ==== PATH SETUP ====
+        const baseDir = path.resolve(__dirname, "../../");
+        const invoicesDir = path.join(baseDir, "public/invoices");
+        if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir, {
+            recursive: true
         });
-        if (err) {
-          console.error("File download error:", err);
-          next(err);
-        }
-      });
-    });
 
-  } catch (error) {
-    console.error("Error generating invoice:", error);
-    next(error);
-  }
+        const filePath = path.join(invoicesDir, `invoice_${invoiceNo}.pdf`);
+        const doc = new PDFDocument({
+            margin: 50,
+            size: "A4"
+        });
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        // ==== HEADER ====
+        const logoPath = path.join(baseDir, "public/images/logo.png");
+        if (fs.existsSync(logoPath)) {
+            doc.image(logoPath, 60, 40, {
+                width: 120
+            });
+        }
+
+        doc.fontSize(10).fillColor("#333")
+            .text("Zoo Deoria By Pass,", 60, 95)
+            .text("Paalm Paradise, near Gorakhpur,", 60)
+            .text("Uttar Pradesh 273016", 60);
+
+        // Invoice info box
+        const boxX = 330;
+        const boxY = 40;
+        doc.roundedRect(boxX, boxY, 220, 90, 6).fill("#f5f5f5").stroke();
+        doc.fillColor("#000")
+            .fontSize(12)
+            .text(`Invoice #${bill.invoice_no}`, boxX + 10, boxY + 10)
+            .fontSize(10)
+            .text(`Date Issued: ${new Date(bill.bill_date).toLocaleDateString("en-GB")}`, boxX + 10, boxY + 35)
+            .text(`Date Due: ${new Date(bill.bill_due_date).toLocaleDateString("en-GB")}`, boxX + 10, boxY + 55);
+
+        // ==== TITLE ====
+        doc.fontSize(18).fillColor("#000").text("Invoice", 0, 150, {
+            align: "center"
+        });
+
+        // ==== BILL INFO ====
+        const user = bill.apartment_id?.assigned_to || {};
+
+        const leftX = 60;
+        const rightX = 330;
+        const topY = 190;
+
+        doc.fontSize(12).fillColor("#000").text("Bill From:", leftX, topY);
+        doc.fontSize(12).text("Bill To:", rightX, topY);
+
+        // From
+        doc.fontSize(10).fillColor("#444")
+            .text("Paalm Paradise", leftX, topY + 20)
+            .text("Talramgarh, Deoria Bypass Road", leftX)
+            .text("Gorakhpur, Uttar Pradesh 273016", leftX)
+            .text("+91 9513369620", leftX);
+
+        // To
+        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, rightX, topY + 20)
+            .text(user.email || "", rightX)
+            .text(user.phone || "", rightX)
+            .text(`${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`, rightX);
+
+        // ==== TABLE ====
+        const startY = 300;
+        const tableWidth = 480;
+        const colWidths = [50, 100, 230, 100];
+        const cols = [leftX, leftX + colWidths[0], leftX + colWidths[0] + colWidths[1], leftX + colWidths[0] + colWidths[1] + colWidths[2]];
+
+        // Header
+        doc.rect(leftX, startY, tableWidth, 25).fill("#f4f4f4").stroke();
+        doc.fillColor("#000").fontSize(10)
+            .text("SNO", cols[0] + 10, startY + 7)
+            .text("QUANTITY", cols[1] + 10, startY + 7)
+            .text("PRODUCT", cols[2] + 10, startY + 7)
+            .text("AMOUNT", cols[3] + 20, startY + 7, {
+                align: "right"
+            });
+
+        // Rows
+        let y = startY + 30;
+        let total = 0;
+        const formatINR = (n) => n.toLocaleString("en-IN");
+
+        bill.payments.forEach((p, i) => {
+            total += p.amount;
+            doc.fillColor("#000").fontSize(10);
+            doc.text(i + 1, cols[0] + 10, y);
+            doc.text("1", cols[1] + 10, y);
+            doc.text(p.description || bill.bill_type?.name || "Utility Bill", cols[2] + 10, y);
+            doc.text(`₹${formatINR(p.amount)}`, cols[3] + 20, y, {
+                align: "right"
+            });
+            y += 25;
+        });
+
+        // Border line
+        doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).stroke();
+
+        // ==== TOTAL ====
+        doc.fontSize(11).font("Helvetica-Bold")
+            .text("Total:", cols[2] + 10, y + 10)
+            .text(`₹${formatINR(total)}`, cols[3] + 20, y + 10, {
+                align: "right"
+            });
+
+        // ==== AMOUNT IN WORDS ====
+        const words = toWords(total).toUpperCase();
+        doc.font("Helvetica").fontSize(10).fillColor("#333")
+            .text(`Total Amount In Words: INR ${words} RUPEES ONLY`, leftX, y + 50);
+
+        // ==== FOOTER ====
+        doc.fontSize(9).fillColor("#777")
+            .text("Thank you for your payment!", 0, doc.page.height - 60, {
+                align: "center"
+            });
+
+        doc.end();
+
+        stream.on("finish", () => {
+            res.download(filePath, `Invoice_${invoiceNo}.pdf`, (err) => {
+                fs.unlink(filePath, (unlinkErr) => {
+                    if (unlinkErr) console.error("Error deleting temp file:", unlinkErr);
+                });
+                if (err) {
+                    console.error("File download error:", err);
+                    next(err);
+                }
+            });
+        });
+    } catch (error) {
+        console.error("Error generating invoice:", error);
+        next(error);
+    }
 };
