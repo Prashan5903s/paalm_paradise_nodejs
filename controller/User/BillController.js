@@ -1,7 +1,9 @@
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
-const toWords = require("number-to-words");
+const {
+    toWords
+} = require("number-to-words");
 
 const UserBill = require("../../model/UserBill");
 const Bill = require("../../model/Bill");
