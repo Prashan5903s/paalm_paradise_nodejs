@@ -1,6 +1,7 @@
 const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 const {
     toWords
 } = require("number-to-words");
@@ -133,9 +134,12 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
-        // ==== HEADER ====
-        const logoPath = path.join(baseDir, "public/images/logo.png");
-        doc.image("https://society.learningink.com/images/company_logo.png", 60, 40, {
+        const response = await axios.get("https://society.learningink.com/images/company_logo.png", {
+            responseType: "arraybuffer"
+        });
+        const logoBuffer = Buffer.from(response.data, "binary");
+
+        doc.image(logoBuffer, 60, 40, {
             width: 120
         });
 
@@ -162,7 +166,6 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
         // ==== BILL INFO ====
         const user = bill.apartment_id?.assigned_to || {};
-
         const leftX = 60;
         const rightX = 330;
         const topY = 190;
@@ -170,18 +173,32 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         doc.fontSize(12).fillColor("#000").text("Bill From:", leftX, topY);
         doc.fontSize(12).text("Bill To:", rightX, topY);
 
-        // From
+        // Bill From
         doc.fontSize(10).fillColor("#444")
-            .text("Paalm Paradise", leftX, topY + 20)
-            .text("Talramgarh, Deoria Bypass Road", leftX)
-            .text("Gorakhpur, Uttar Pradesh 273016", leftX)
-            .text("+91 9513369620", leftX);
+            .text("Paalm Paradise", leftX, topY + 20, {
+                width: 200
+            })
+            .text("Talramgarh, Deoria Bypass Road", leftX, topY + 35, {
+                width: 200
+            })
+            .text("Gorakhpur, Uttar Pradesh 273016", leftX, topY + 50, {
+                width: 200
+            })
+            .text("+91 9513369620", leftX, topY + 65);
 
-        // To
-        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, rightX, topY + 20)
-            .text(user.email || "", rightX)
-            .text(user.phone || "", rightX)
-            .text(`${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`, rightX);
+        // Bill To
+        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, rightX, topY + 20, {
+                width: 200
+            })
+            .text(user.email || "", rightX, topY + 35, {
+                width: 200
+            })
+            .text(user.phone || "", rightX, topY + 50, {
+                width: 200
+            })
+            .text(`${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`, rightX, topY + 65, {
+                width: 200
+            });
 
         // ==== TABLE ====
         const startY = 300;
@@ -189,49 +206,49 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         const colWidths = [50, 100, 230, 100];
         const cols = [leftX, leftX + colWidths[0], leftX + colWidths[0] + colWidths[1], leftX + colWidths[0] + colWidths[1] + colWidths[2]];
 
-        // Header
+        // Table Header
         doc.rect(leftX, startY, tableWidth, 25).fill("#f4f4f4").stroke();
-        doc.fillColor("#000").fontSize(10)
-            .text("SNO", cols[0] + 10, startY + 7)
-            .text("QUANTITY", cols[1] + 10, startY + 7)
-            .text("PRODUCT", cols[2] + 10, startY + 7)
-            .text("AMOUNT", cols[3] + 20, startY + 7, {
+        doc.fillColor("#000").fontSize(10).font("Helvetica-Bold")
+            .text("S.No", cols[0] + 10, startY + 7)
+            .text("Qty", cols[1] + 10, startY + 7)
+            .text("Description", cols[2] + 10, startY + 7)
+            .text("Amount", cols[3] + 10, startY + 7, {
                 align: "right"
             });
 
-        // Rows
+        // Table Rows
         let y = startY + 30;
         let total = 0;
         const formatINR = (n) => n.toLocaleString("en-IN");
 
         bill.payments.forEach((p, i) => {
             total += p.amount;
-            doc.fillColor("#000").fontSize(10);
-            doc.text(i + 1, cols[0] + 10, y);
-            doc.text("1", cols[1] + 10, y);
-            doc.text(p.description || bill.bill_type?.name || "Utility Bill", cols[2] + 10, y);
-            doc.text(`₹${formatINR(p.amount)}`, cols[3] + 20, y, {
-                align: "right"
-            });
+            doc.fillColor("#000").fontSize(10).font("Helvetica");
+            doc.text(i + 1, cols[0] + 10, y)
+                .text("1", cols[1] + 10, y)
+                .text(p.description || bill.bill_type?.name || "Utility Bill", cols[2] + 10, y)
+                .text(`₹${formatINR(p.amount)}`, cols[3] + 10, y, {
+                    align: "right"
+                });
             y += 25;
         });
 
-        // Border line
+        // Total Line
         doc.moveTo(leftX, y).lineTo(leftX + tableWidth, y).stroke();
-
-        // ==== TOTAL ====
         doc.fontSize(11).font("Helvetica-Bold")
             .text("Total:", cols[2] + 10, y + 10)
-            .text(`₹${formatINR(total)}`, cols[3] + 20, y + 10, {
+            .text(`₹${formatINR(total)}`, cols[3] + 10, y + 10, {
                 align: "right"
             });
 
-        // ==== AMOUNT IN WORDS ====
-        const words = toWords(total).toUpperCase();
+        // Amount in Words
+        const words = toWords(total).replace(/\b\w/g, (c) => c.toUpperCase());
         doc.font("Helvetica").fontSize(10).fillColor("#333")
-            .text(`Total Amount In Words: INR ${words} RUPEES ONLY`, leftX, y + 50);
+            .text(`Total Amount In Words: INR ${words} Rupees Only`, leftX, y + 50, {
+                width: tableWidth
+            });
 
-        // ==== FOOTER ====
+        // Footer
         doc.fontSize(9).fillColor("#777")
             .text("Thank you for your payment!", 0, doc.page.height - 60, {
                 align: "center"
@@ -239,6 +256,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
         doc.end();
 
+        // Send PDF
         stream.on("finish", () => {
             res.download(filePath, `Invoice_${invoiceNo}.pdf`, (err) => {
                 fs.unlink(filePath, (unlinkErr) => {
