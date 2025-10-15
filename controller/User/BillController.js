@@ -135,11 +135,9 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
         // ==== HEADER ====
         const logoPath = path.join(baseDir, "public/images/logo.png");
-        if (fs.existsSync(logoPath)) {
-            doc.image(logoPath, 60, 40, {
-                width: 120
-            });
-        }
+        doc.image("https://society.learningink.com/images/company_logo.png", 60, 40, {
+            width: 120
+        });
 
         doc.fontSize(10).fillColor("#333")
             .text("Zoo Deoria By Pass,", 60, 95)
