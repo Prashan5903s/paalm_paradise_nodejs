@@ -99,12 +99,9 @@ exports.getBillController = async (req, res, next) => {
 
 exports.downloadInvoicePDF = async (req, res, next) => {
     try {
-
         const invoiceNo = req.params?.invoiceNo;
-
-        if (!invoiceNo) {
+        if (!invoiceNo)
             return errorResponse(res, "Invoice number is required", {}, 400);
-        }
 
         const bill = await Bill.findOne({
                 invoice_no: invoiceNo
@@ -119,9 +116,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
             .populate("bill_type")
             .populate("payments");
 
-        if (!bill) {
-            return errorResponse(res, "Bill does not exist", {}, 404);
-        }
+        if (!bill) return errorResponse(res, "Bill does not exist", {}, 404);
 
         // ==== DIRECTORY SETUP ====
         const baseDir = path.resolve(__dirname, "../../");
@@ -132,118 +127,112 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
         const filePath = path.join(invoicesDir, `invoice_${invoiceNo}.pdf`);
         const doc = new PDFDocument({
-            margin: 40
+            margin: 50
         });
         const stream = fs.createWriteStream(filePath);
         doc.pipe(stream);
 
         // ==== HEADER ====
         const logoPath = path.join(baseDir, "public/images/logo.png");
+        const headerY = 50;
+
+        // Logo + address box
         if (fs.existsSync(logoPath)) {
-            doc.image(logoPath, 50, 30, {
-                width: 80
+            doc.image(logoPath, 60, headerY, {
+                width: 100
             });
         }
+        doc.fontSize(11)
+            .fillColor("#333")
+            .text("Zoo Deoria By Pass,", 60, headerY + 70)
+            .text("Paalm Paradise, near Gorakhpur,", 60)
+            .text("Uttar Pradesh 273016");
 
-        doc.fontSize(18).text(`Invoice #${bill.invoice_no}`, 0, 50, {
+        // Invoice info box (light gray)
+        doc.rect(320, 40, 220, 90).fill("#f4f4f4").stroke();
+        doc.fillColor("#000").fontSize(14).text(`Invoice #${bill.invoice_no}`, 340, 55);
+        doc.fontSize(11)
+            .text(`Date Issued: ${new Date(bill.bill_date).toLocaleDateString("en-GB")}`, 340, 80)
+            .text(`Date Due: ${new Date(bill.bill_due_date).toLocaleDateString("en-GB")}`, 340, 100);
+
+        // ==== TITLE ====
+        doc.fontSize(18).fillColor("#000").text("Invoice", {
+            align: "center"
+        });
+        doc.moveDown(1.5);
+
+        // ==== BILL FROM & BILL TO ====
+        const user = bill.apartment_id?.assigned_to || {};
+
+        doc.fontSize(13).text("Bill From:", 60, 160);
+        doc.fontSize(13).text("Bill To:", 320, 160);
+
+        doc.fontSize(11)
+            .fillColor("#444")
+            .text("Paalm Paradise", 60, 180)
+            .text("Talramgarh, Deoria Bypass Road", 60)
+            .text("Gorakhpur, Uttar Pradesh 273016", 60)
+            .text("+91 9513369620", 60);
+
+        doc.text(`${user.first_name || ""} ${user.last_name || ""}`, 320, 180)
+            .text(user.email || "", 320)
+            .text(user.phone || "", 320)
+            .text(
+                `${user.address || `F-${bill.apartment_id?.apartment_no || ""}, Paalm Paradise`} ${user.pincode || "273016"}`,
+                320
+            );
+
+        doc.moveDown(3);
+
+        // ==== TABLE HEADER ====
+        const tableTop = doc.y + 10;
+        doc.rect(60, tableTop, 480, 25).fill("#f4f4f4").stroke();
+        doc.fillColor("#000").fontSize(11);
+        doc.text("SNO", 75, tableTop + 7);
+        doc.text("QUANTITY", 160, tableTop + 7);
+        doc.text("PRODUCT", 300, tableTop + 7);
+        doc.text("AMOUNT", 460, tableTop + 7, {
             align: "right"
         });
-        doc.moveDown(0.5);
-        doc
-            .fontSize(12)
-            .text(`Date Issued: ${new Date(bill.bill_date).toLocaleDateString("en-GB")}`, {
-                align: "right"
-            })
-            .text(`Due Date: ${new Date(bill.bill_due_date).toLocaleDateString("en-GB")}`, {
-                align: "right"
-            });
-        doc.moveDown(2);
 
-        // ==== COMPANY INFO ====
-        doc.fontSize(14).text("Paalm Paradise", {
-            underline: true
-        });
-        doc
-            .fontSize(12)
-            .text("Talramgarh, Deoria Bypass Road, Gorakhpur, UP 273016")
-            .text("+91 9513369620");
-        doc.moveDown(2);
-
-        // ==== BILL TO ====
-        const user = bill.apartment_id?.assigned_to || {};
-        doc.fontSize(14).text("Bill To:", {
-            underline: true
-        });
-        doc
-            .fontSize(12)
-            .text(`${user.first_name || ""} ${user.last_name || ""}`)
-            .text(user.email || "")
-            .text(user.phone || "")
-            .text(`${user.address || ""} ${user.pincode || ""}`);
-        doc.moveDown(2);
-
-        // ==== INVOICE DETAILS ====
-        doc.fontSize(14).text("Invoice Details", {
-            underline: true
-        });
-        doc.moveDown(0.5);
-
-        const tableTop = doc.y;
-        const startX = 60;
-        doc
-            .fontSize(12)
-            .text("S.No", startX, tableTop, {
-                continued: true
-            })
-            .text("Description", 150, tableTop, {
-                continued: true
-            })
-            .text("Quantity", 350, tableTop, {
-                continued: true
-            })
-            .text("Amount (₹)", 450);
-        doc.moveDown(0.5);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-
-        // ==== PAYMENTS ====
+        // ==== TABLE CONTENT ====
+        let y = tableTop + 30;
         let total = 0;
         const formatINR = (num) => num.toLocaleString("en-IN");
 
         bill.payments.forEach((p, i) => {
             total += p.amount;
-            doc
-                .fontSize(12)
-                .text(`${i + 1}`, startX, doc.y, {
-                    continued: true
-                })
-                .text(p.description || "Maintenance Charge", 150, doc.y, {
-                    continued: true
-                })
-                .text("1", 350, doc.y, {
-                    continued: true
-                })
-                .text(`₹${formatINR(p.amount)}`, 450);
+            doc.fontSize(11).fillColor("#000");
+            doc.text(`${i + 1}`, 75, y);
+            doc.text("1", 175, y);
+            doc.text(p.description || bill.bill_type?.name || "Utility Bill", 300, y);
+            doc.text(`₹${formatINR(p.amount)}`, 460, y, {
+                align: "right"
+            });
+            y += 25;
         });
 
-        doc.moveDown(1);
-        doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
-
         // ==== TOTAL ====
-        doc.fontSize(12).text(`Total Amount: ₹${formatINR(total)}`, 400, doc.y + 10);
-        doc.moveDown(1.5);
+        doc.moveTo(60, y + 5).lineTo(540, y + 5).stroke();
+        doc.fontSize(12)
+            .text("Total:", 400, y + 15)
+            .text(`₹${formatINR(total)}`, 460, y + 15, {
+                align: "right"
+            });
 
         // ==== AMOUNT IN WORDS ====
-
         const amountInWords = toWords(total)
             .replace(/\b\w/g, (c) => c.toUpperCase())
             .trim();
-        doc.text(`Total Amount In Words: ${amountInWords} Rupees Only`);
         doc.moveDown(2);
+        doc.fontSize(11).fillColor("#333")
+            .text(`Total Amount In Words: INR ${amountInWords} Rupees Only`, 60);
 
         // ==== FOOTER ====
-        doc
-            .fontSize(10)
-            .text("Thank you for your payment!", 0, doc.y + 40, {
+        doc.moveDown(4);
+        doc.fontSize(10)
+            .fillColor("#555")
+            .text("Thank you for your payment!", 0, doc.y, {
                 align: "center"
             });
 
