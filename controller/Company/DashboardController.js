@@ -189,12 +189,19 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             .populate('user_id')
             .populate('payments');
 
-        const maintenance = await Maintenance.findOne({
-            cost_type: "1",
-            created_by: userId
-        })
+        let maintenance = await Maintenance.findOne({
+            cost_type: "2",
+            created_by: userId,
+        });
 
-        const fixedCost = maintenance.fixed_data;
+        if (!maintenance) {
+            maintenance = await Maintenance.findOne({
+                cost_type: "1",
+                created_by: userId,
+            });
+        }
+
+        const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
 
         const notice = await Notice.find({
             created_by: userId,

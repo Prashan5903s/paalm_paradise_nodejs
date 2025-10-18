@@ -61,12 +61,19 @@ exports.getBillController = async (req, res, next) => {
                 .populate("user_id")
                 .populate("payments");
 
-            const maintenance = await Maintenance.findOne({
-                cost_type: "1",
+            let maintenance = await Maintenance.findOne({
+                cost_type: "2",
                 created_by: masterId,
             });
 
-            const fixedCost = maintenance?.fixed_data || [];
+            if (!maintenance) {
+                maintenance = await Maintenance.findOne({
+                    cost_type: "1",
+                    created_by: masterId,
+                });
+            }
+
+            const fixedCost = maintenance?.fixed_data.length >  0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
 
             if (!userBill) {
                 return errorResponse(res, "User bill does not exist", {}, 404);

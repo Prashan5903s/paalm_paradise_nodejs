@@ -169,18 +169,27 @@ exports.getUserBillController = async (req, res, next) => {
             }
         ]);
 
-        const payment = await Payment.find({
+        let maintenance = await Maintenance.findOne({
+            cost_type: "2",
             created_by: userId,
-            bill_id: billId
-        })
+        });
 
-        if (!apartments || !payment) {
+        if (!maintenance) {
+            maintenance = await Maintenance.findOne({
+                cost_type: "1",
+                created_by: userId,
+            });
+        }
+
+        const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
+
+        if (!apartments || !fixedCost) {
             return errorResponse(res, 'User bill does not exist', {}, 404)
         }
 
         data['userBill'] = apartments;
 
-        data['payment'] = payment;
+        data['fixedCost'] = fixedCost;
 
         return successResponse(res, 'User bill fetched successfully', data)
 

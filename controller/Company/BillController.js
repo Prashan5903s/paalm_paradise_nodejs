@@ -22,11 +22,21 @@ exports.getBillData = async (req, res, next) => {
             })
             .populate({
                 path: 'apartment_id',
-                select: 'apartment_no apartment_area assigned_to',
-                populate: {
-                    path: 'assigned_to',
-                }
+                select: 'apartment_no tower_id floor_id apartment_area assigned_to',
+                populate: [{
+                        path: 'assigned_to'
+                    },
+                    {
+                        path: 'tower_id',
+                        select: 'name'
+                    }, // Tower fields
+                    {
+                        path: 'floor_id',
+                        select: 'floor_name'
+                    } // Floor fields
+                ]
             })
+
             .populate('bill_type')
             .populate({
                 path: 'payments',
@@ -57,7 +67,7 @@ exports.getCreateBill = async (req, res, next) => {
                 $exists: true,
                 $ne: null
             }
-        });
+        }).populate('tower_id').populate('floor_id').populate('assigned_to');
 
         const billType = await BillType.find();
 
@@ -273,4 +283,3 @@ exports.putBillController = async (req, res, next) => {
         next(error);
     }
 };
-
