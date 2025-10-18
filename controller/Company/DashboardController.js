@@ -201,7 +201,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             });
         }
 
-        const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
+        const fixedCost = maintenance?.fixed_data?.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
 
         const notice = await Notice.find({
             created_by: userId,
@@ -229,7 +229,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             utilityBill,
             notice
         }
-        
+
 
         return successResponse(res, "Dashboard data does not exist", data)
 
