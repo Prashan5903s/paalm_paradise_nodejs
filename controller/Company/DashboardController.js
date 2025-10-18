@@ -229,6 +229,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             utilityBill,
             notice
         }
+        
 
         return successResponse(res, "Dashboard data does not exist", data)
 
