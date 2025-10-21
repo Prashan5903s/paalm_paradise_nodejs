@@ -73,7 +73,7 @@ exports.getBillController = async (req, res, next) => {
                 });
             }
 
-            const fixedCost = maintenance?.fixed_data.length >  0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
+            const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
 
             if (!userBill) {
                 return errorResponse(res, "User bill does not exist", {}, 404);
@@ -284,3 +284,131 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         next(error);
     }
 };
+
+exports.getMaintenanceBill = async (req, res, next) => {
+    try {
+
+        const status = req?.params?.status;
+
+        const userId = req?.userId;
+
+        const user = await User.findById(userId);
+        const masterId = user?.created_by;
+
+        const bills = await Bill.find({
+            bill_data_type: type,
+            created_by: masterId,
+        }).select("_id");
+
+        const billsId = bills.map((b) => b._id.toString());
+
+        const userBill = await UserBill.find({
+                user_id: userId,
+                bill_id: {
+                    $in: billsId
+                },
+            })
+            .populate("bill_id")
+            .populate("apartment_id")
+            .populate("user_id")
+            .populate("payments");
+
+        let maintenance = await Maintenance.findOne({
+            cost_type: "2",
+            created_by: masterId,
+        });
+
+        if (!maintenance) {
+            maintenance = await Maintenance.findOne({
+                cost_type: "1",
+                created_by: masterId,
+            });
+        }
+
+        const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
+
+        if (!userBill) {
+            return errorResponse(res, "User bill does not exist", {}, 404);
+        }
+
+        const fixedCostMap = useMemo(() => {
+            const map = new Map();
+
+            if (Array.isArray(fixedCost) && fixedCost.length > 0) {
+
+                fixedCost.forEach((item) => {
+                    map.set(item.apartment_type, String(item.unit_value || ""));
+                });
+            } else if (fixedCost && typeof fixedCost === "object") {
+
+                map.set("default", String(fixedCost.unit_value || ""));
+            }
+
+            return map;
+        }, [fixedCost]);
+
+        const grouped = {};
+
+        userBill?.forEach((row) => {
+
+            const billId = row?.bill_id?._id;
+            const apartmentId = row?.apartment_id?._id;
+            const key = `${billId}-${apartmentId}`;
+
+            if (!grouped[key]) {
+                grouped[key] = {
+                    ...row,
+                    paid_cost: 0,
+                    total_cost: 0,
+                    status: "Unpaid",
+                };
+            }
+
+            // Fixed cost calculation
+            const additionalCost = row?.bill_id?.additional_cost || [];
+            const apartmentType = row?.apartment_id?.apartment_type || "";
+            const apartmentArea = Number(row?.apartment_id?.apartment_area || 0);
+
+            const fixedCost = Array.isArray(data?.fixed_cost) ?
+                Number(fixedCostMap.get(apartmentType) || 0) :
+                Number(fixedCostMap.get("default") || 0) * Number(apartmentArea).toFixed(0);
+
+            const additionalTotal = additionalCost.reduce(
+                (sum, val) => sum + (Number(val.amount) || 0),
+                0
+            );
+
+            grouped[key].total_cost =
+                fixedCost + additionalTotal;
+
+            grouped[key].paid_cost +=
+                row?.payments?.reduce((sum, val) => sum + (Number(val.amount) || 0), 0) || 0;
+
+            grouped[key].status =
+                grouped[key].paid_cost >= grouped[key].total_cost ?
+                "Paid" :
+                "Unpaid";
+
+        });
+
+        processedData = Object.values(grouped);
+
+        let finalData = processedData;
+
+        if (status) {
+            finalData = processedData.filter(
+                (row) => row.paid_cost === row.total_cost
+            );
+        } else {
+            finalData = processedData.filter(
+                (row) => row.paid_cost !== row.total_cost
+            );
+        }
+
+        return successResponse(res, "Maintenance bill fetched successfully", finalData)
+
+
+    } catch (error) {
+        next(error)
+    }
+}

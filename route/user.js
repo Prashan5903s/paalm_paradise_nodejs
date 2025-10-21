@@ -45,4 +45,6 @@ router.get("/notice", isAuth, noticeController.getNoticeController);
 // ==================== 🎉 EVENT ====================
 router.get("/event", isAuth, eventController.getEventListAPIController);
 
+router.get('/bill/maintenance/data/:status', isAuth, BillController.getMaintenanceBill)
+
 module.exports = router;
