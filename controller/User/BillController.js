@@ -370,7 +370,7 @@ exports.getMaintenanceBill = async (req, res, next) => {
             if (fixedCostMap.has(apartmentType)) {
                 fixedCost = fixedCostMap.get(apartmentType);
             } else if (fixedCostMap.has("default")) {
-                // अगर area-based calculation चाहिए
+
                 fixedCost = fixedCostMap.get("default") * apartmentArea;
             }
 
@@ -394,12 +394,13 @@ exports.getMaintenanceBill = async (req, res, next) => {
         const processedData = Object.values(grouped);
 
         // ✅ Filter by status param (if given)
+
         let finalData = processedData;
-        if (status === "paid") {
+        if (status) {
             finalData = processedData.filter(
                 (row) => row.status.toLowerCase() === "paid"
             );
-        } else if (status === "unpaid") {
+        } else {
             finalData = processedData.filter(
                 (row) => row.status.toLowerCase() === "unpaid"
             );
