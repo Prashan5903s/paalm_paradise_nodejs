@@ -296,7 +296,7 @@ exports.getMaintenanceBill = async (req, res, next) => {
         const masterId = user?.created_by;
 
         const bills = await Bill.find({
-            bill_data_type: type,
+            bill_data_type: "maintenance",
             created_by: masterId,
         }).select("_id");
 
