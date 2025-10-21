@@ -161,7 +161,7 @@ exports.getMyComplainFilterController = async (req, res, next) => {
         ]);
 
 
-        if (!complains || complains.length === 0) {
+        if (!complains) {
             return errorResponse(res, "Complain does not exist", {}, 404);
         }
 
