@@ -21,6 +21,9 @@ router.get("/invoice/pdf/page/:invoiceNo", isAuth, BillController.downloadInvoic
 
 // ==================== 📢 COMPLAIN ROUTES ====================
 router.get("/my-complain", isAuth, ComplainController.getMyComplainController);
+
+router.get("/my-user-complain/:start/:end", isAuth, ComplainController.getMyComplainFilterController);
+
 router.post("/my-complain", isAuth, ComplainController.postComplainController);
 router.get("/my-complain/data/create", isAuth, ComplainController.getCreateComplainController);
 router.delete("/my-complain/:id", isAuth, ComplainController.deleteComplainController);
@@ -31,6 +34,7 @@ router.post("/complain/data/resolve", isAuth, complainResolvedController.postCom
 
 // ==================== 🚪 VISITOR ROUTES ====================
 router.get("/visitor", isAuth, visitorController.getVisitorController);
+router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilterController);
 router.post("/visitor", isAuth, visitorController.postVisitorController);
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
 router.put("/visitor/update/:id", isAuth, visitorController.putVisitiorController);

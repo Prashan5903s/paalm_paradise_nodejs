@@ -2,7 +2,10 @@ const Visitor = require('../../model/Visitor');
 const Apartment = require('../../model/Apartment')
 const User = require('../../model/User')
 const VisitorType = require('../../model/VisitorType')
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 function generateSixDigitCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -13,14 +16,19 @@ exports.getVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const visitor = await Visitor.find({ created_by: userId })
+        const visitor = await Visitor.find({
+                created_by: userId
+            })
             .populate('user_id')
             .populate('category')
             .populate({
                 path: 'apartment_id',
-                populate: [
-                    { path: 'tower_id' },
-                    { path: 'floor_id' }
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
                 ]
             });
 
@@ -36,6 +44,62 @@ exports.getVisitorController = async (req, res, next) => {
     }
 }
 
+exports.getVisitorFilterController = async (req, res, next) => {
+    try {
+        const userId = req.userId;
+        const start = req?.params?.start ? new Date(req.params.start) : null;
+        const end = req?.params?.end ? new Date(req.params.end) : null;
+
+        // बेसिक condition
+        const filter = {
+            created_by: userId
+        };
+
+        // अगर start और end दोनों हैं
+        if (start && end) {
+            filter.created_at = {
+                $gte: start,
+                $lte: end
+            };
+        }
+        // सिर्फ start है
+        else if (start) {
+            filter.created_at = {
+                $gte: start
+            };
+        }
+        // सिर्फ end है
+        else if (end) {
+            filter.created_at = {
+                $lte: end
+            };
+        }
+
+        const visitors = await Visitor.find(filter)
+            .populate('user_id')
+            .populate('category')
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            });
+
+        if (!visitors || visitors.length === 0) {
+            return errorResponse(res, "Visitor does not exist", {}, 404);
+        }
+
+        return successResponse(res, "Visitor fetched successfully", visitors);
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 exports.createVisitorController = async (req, res, next) => {
     try {
 
@@ -46,9 +110,13 @@ exports.createVisitorController = async (req, res, next) => {
         const users = await User.findById(userId)
         const masterId = users.created_by;
 
-        const apartment = await Apartment.find({ assigned_to: userId })
+        const apartment = await Apartment.find({
+            assigned_to: userId
+        })
 
-        const visitorType = await VisitorType.find({ created_by: masterId })
+        const visitorType = await VisitorType.find({
+            created_by: masterId
+        })
 
         if (!apartment || !visitorType) {
             return errorResponse(res, "Apartment does not exist", {}, 404)
@@ -69,13 +137,26 @@ exports.postVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const { visitor_name, visitor_contact, checkin_date, checkin_from_time, checkin_to_time, apartment_id, no_of_persons, vehicle_number, category, description } = req.body;
+        const {
+            visitor_name,
+            visitor_contact,
+            checkin_date,
+            checkin_from_time,
+            checkin_to_time,
+            apartment_id,
+            no_of_persons,
+            vehicle_number,
+            category,
+            description
+        } = req.body;
 
         let apartmentId = null;
 
         if (!apartment_id) {
 
-            const apartments = await Apartment.findOne({ assigned_to: userId })
+            const apartments = await Apartment.findOne({
+                assigned_to: userId
+            })
             if (!apartments) {
                 return errorResponse(res, "User has no apartment assigned", {}, 500)
             } else {
@@ -134,7 +215,9 @@ exports.putVisitiorController = async (req, res, next) => {
 
         if (!apartment_id) {
 
-            const apartments = await Apartment.findOne({ assigned_to: userId })
+            const apartments = await Apartment.findOne({
+                assigned_to: userId
+            })
             apartmentId = apartments._id
 
         } else {
@@ -142,7 +225,10 @@ exports.putVisitiorController = async (req, res, next) => {
         }
 
 
-        await Visitor.findOneAndUpdate({ _id: id, created_by: userId }, {
+        await Visitor.findOneAndUpdate({
+            _id: id,
+            created_by: userId
+        }, {
             visitor_name,
             apartment_id: apartmentId,
             visitor_contact_no: visitor_contact,
