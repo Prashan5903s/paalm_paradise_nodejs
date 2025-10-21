@@ -287,9 +287,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
 
 exports.getMaintenanceBill = async (req, res, next) => {
     try {
-
         const status = req?.params?.status;
-
         const userId = req?.userId;
 
         const user = await User.findById(userId);
@@ -325,90 +323,94 @@ exports.getMaintenanceBill = async (req, res, next) => {
             });
         }
 
-        const fixedCost = maintenance?.fixed_data.length > 0 ? maintenance?.fixed_data : maintenance?.unit_type || [];
+        const fixedData =
+            maintenance?.fixed_data?.length > 0 ?
+            maintenance.fixed_data :
+            maintenance?.unit_type || [];
 
-        if (!userBill) {
+        if (!userBill || userBill.length === 0) {
             return errorResponse(res, "User bill does not exist", {}, 404);
         }
 
-        const fixedCostMap = useMemo(() => {
-            const map = new Map();
+        // ✅ Create fixed cost map (no useMemo in Node.js)
+        const fixedCostMap = new Map();
 
-            if (Array.isArray(fixedCost) && fixedCost.length > 0) {
+        if (Array.isArray(fixedData) && fixedData.length > 0) {
+            fixedData.forEach((item) => {
+                fixedCostMap.set(item.apartment_type, Number(item.unit_value || 0));
+            });
+        } else if (fixedData && typeof fixedData === "object") {
+            fixedCostMap.set("default", Number(fixedData.unit_value || 0));
+        }
 
-                fixedCost.forEach((item) => {
-                    map.set(item.apartment_type, String(item.unit_value || ""));
-                });
-            } else if (fixedCost && typeof fixedCost === "object") {
-
-                map.set("default", String(fixedCost.unit_value || ""));
-            }
-
-            return map;
-        }, [fixedCost]);
-
+        // ✅ Grouping logic
         const grouped = {};
 
-        userBill?.forEach((row) => {
-
-            const billId = row?.bill_id?._id;
-            const apartmentId = row?.apartment_id?._id;
+        userBill.forEach((row) => {
+            const billId = row?.bill_id?._id?.toString();
+            const apartmentId = row?.apartment_id?._id?.toString();
             const key = `${billId}-${apartmentId}`;
 
             if (!grouped[key]) {
                 grouped[key] = {
-                    ...row,
+                    ...row.toObject(),
                     paid_cost: 0,
                     total_cost: 0,
                     status: "Unpaid",
                 };
             }
 
-            // Fixed cost calculation
+            // ✅ Fixed cost calculation
             const additionalCost = row?.bill_id?.additional_cost || [];
             const apartmentType = row?.apartment_id?.apartment_type || "";
             const apartmentArea = Number(row?.apartment_id?.apartment_area || 0);
 
-            const fixedCost = Array.isArray(data?.fixed_cost) ?
-                Number(fixedCostMap.get(apartmentType) || 0) :
-                Number(fixedCostMap.get("default") || 0) * Number(apartmentArea).toFixed(0);
+            let fixedCost = 0;
+
+            if (fixedCostMap.has(apartmentType)) {
+                fixedCost = fixedCostMap.get(apartmentType);
+            } else if (fixedCostMap.has("default")) {
+                // अगर area-based calculation चाहिए
+                fixedCost = fixedCostMap.get("default") * apartmentArea;
+            }
 
             const additionalTotal = additionalCost.reduce(
                 (sum, val) => sum + (Number(val.amount) || 0),
                 0
             );
 
-            grouped[key].total_cost =
-                fixedCost + additionalTotal;
+            grouped[key].total_cost = fixedCost + additionalTotal;
 
-            grouped[key].paid_cost +=
-                row?.payments?.reduce((sum, val) => sum + (Number(val.amount) || 0), 0) || 0;
+            grouped[key].paid_cost =
+                (row?.payments || []).reduce(
+                    (sum, val) => sum + (Number(val.amount) || 0),
+                    0
+                );
 
             grouped[key].status =
-                grouped[key].paid_cost >= grouped[key].total_cost ?
-                "Paid" :
-                "Unpaid";
-
+                grouped[key].paid_cost >= grouped[key].total_cost ? "Paid" : "Unpaid";
         });
 
-        processedData = Object.values(grouped);
+        const processedData = Object.values(grouped);
 
+        // ✅ Filter by status param (if given)
         let finalData = processedData;
-
-        if (status) {
+        if (status === "paid") {
             finalData = processedData.filter(
-                (row) => row.paid_cost === row.total_cost
+                (row) => row.status.toLowerCase() === "paid"
             );
-        } else {
+        } else if (status === "unpaid") {
             finalData = processedData.filter(
-                (row) => row.paid_cost !== row.total_cost
+                (row) => row.status.toLowerCase() === "unpaid"
             );
         }
 
-        return successResponse(res, "Maintenance bill fetched successfully", finalData)
-
-
+        return successResponse(
+            res,
+            "Maintenance bill fetched successfully",
+            finalData
+        );
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
