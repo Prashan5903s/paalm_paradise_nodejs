@@ -396,7 +396,8 @@ exports.getMaintenanceBill = async (req, res, next) => {
         // ✅ Filter by status param (if given)
 
         let finalData = processedData;
-        if (status) {
+
+        if (status || status == "true") {
             finalData = processedData.filter(
                 (row) => row.status.toLowerCase() === "paid"
             );
