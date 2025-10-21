@@ -290,6 +290,12 @@ exports.getMaintenanceBill = async (req, res, next) => {
         const status = req?.params?.status;
         const userId = req?.userId;
 
+        return successResponse(
+            res,
+            "Maintenance bill fetched successfully",
+            status
+        );
+
         const user = await User.findById(userId);
         const masterId = user?.created_by;
 
