@@ -12,6 +12,7 @@ const visitorController = require("../controller/User/VisitorController");
 const dashboardController = require("../controller/User/DashboardController");
 const noticeController = require("../controller/User/NoticeController");
 const eventController = require("../controller/User/EventController");
+const appConfigController = require('../controller/User/AppConfigAPIController')
 
 // ==================== 💰 BILL ROUTES ====================
 router.get("/my-bill/:type/:status", isAuth, BillController.getBillController);
@@ -50,5 +51,7 @@ router.get("/notice", isAuth, noticeController.getNoticeController);
 router.get("/event", isAuth, eventController.getEventListAPIController);
 
 router.get('/bill/maintenance/data/:status', isAuth, BillController.getMaintenanceBill)
+
+router.get('/app/config/data', isAuth, appConfigController.getConfigAPIController)
 
 module.exports = router;

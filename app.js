@@ -11,7 +11,7 @@ const bcrypt = require('bcryptjs')
 const fs = require('fs');
 // const Maintenance = require('./model/Maintenance')
 const cors = require('cors');
-const User = require('./model/User');
+const AppConfig = require('./model/AppConfig');
 
 require('dotenv').config();
 
