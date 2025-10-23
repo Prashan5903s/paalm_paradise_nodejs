@@ -6,6 +6,11 @@ const noticeSchema = new mongoose.Schema({
         required: true,
         maxLength: 255
     },
+    image_url: {
+        type: String,
+        required: true,
+        maxLength: 255
+    },
     description: {
         type: String,
         required: true,

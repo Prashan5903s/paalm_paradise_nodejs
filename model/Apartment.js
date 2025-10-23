@@ -32,6 +32,12 @@ const apartmentSchema = new mongoose.Schema({
         required: false,
         default: null
     },
+    tenant_assigned_to: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "users",
+        required: false,
+        default: null
+    },
     status: {
         type: Boolean,
         default: false
@@ -58,7 +64,11 @@ apartmentSchema.virtual('user_bills', {
     foreignField: 'apartment_id',
 });
 
-apartmentSchema.set('toObject', { virtuals: true });
-apartmentSchema.set('toJSON', { virtuals: true });
+apartmentSchema.set('toObject', {
+    virtuals: true
+});
+apartmentSchema.set('toJSON', {
+    virtuals: true
+});
 
 module.exports = mongoose.model('apartments', apartmentSchema)

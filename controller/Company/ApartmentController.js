@@ -8,7 +8,7 @@ exports.getApartmentAPI = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const apartment = await Apartment.find({ created_by: userId }).populate('apartment_type').sort({ "apartment_no": 1 })
+        const apartment = await Apartment.find({ created_by: userId }).populate('tower_id').populate('floor_id').populate('apartment_type').sort({ "apartment_no": 1 })
 
         if (!apartment) {
             return errorResponse(res, "Apartment does not exist", {}, 404)

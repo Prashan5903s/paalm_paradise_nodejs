@@ -27,6 +27,30 @@ exports.getTenantAPIController = async (req, res, next) => {
     }
 }
 
+exports.getTenantCreateAPIController = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+
+        const apartment = await Apartment.find({
+            created_by: userId,
+            assigned_to: {
+                $ne: null
+            },
+        }).populate('tower_id').populate('floor_id');
+
+        if (!apartment) {
+            return errorResponse(res, "Apartment does not exist", {}, 404)
+
+        }
+
+        return successResponse(res, "Apartment fetched successfully", apartment)
+
+    } catch (error) {
+        next(error)
+    }
+}
+
 exports.getEditTenantAPI = async (req, res, next) => {
     try {
 
@@ -99,6 +123,10 @@ exports.postTenantAPIController = async (req, res, next) => {
 
         await tenant.save()
 
+        await Apartment.findByIdAndUpdate(apartment_id, {
+            tenant_assigned_to: tenant._id
+        })
+
         return successResponse(res, "Tenant added successfully")
 
     } catch (error) {
@@ -137,6 +165,10 @@ exports.putTenantController = async (req, res, next) => {
         if (!user) {
             return errorResponse(res, "Tenant does not exist", {}, 404)
         }
+
+        await Apartment.findByIdAndUpdate(apartment_id, {
+            tenant_assigned_to: id
+        })
 
         await User.findOneAndUpdate({
             created_by: userId,

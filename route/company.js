@@ -137,6 +137,7 @@ router.get("/table/financial/report/:start/:end/:type", isAuth, reportController
 
 //This route is for tenant
 router.get('/tenant', isAuth, tenantController.getTenantAPIController)
+router.get('/tenant/create/data', isAuth, tenantController.getTenantCreateAPIController)
 router.get('/tenant/edit/:id', isAuth, tenantController.getEditTenantAPI)
 router.post('/tenant', isAuth, imageUpload('photo'), tenantController.postTenantAPIController)
 router.put('/tenant/update/:id', imageUpload('photo'), isAuth, tenantController.putTenantController)
