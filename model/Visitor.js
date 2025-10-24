@@ -66,6 +66,10 @@ const visitorSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    visitor_status: {
+        type: String,
+        default: "1"
+    },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
         required: true

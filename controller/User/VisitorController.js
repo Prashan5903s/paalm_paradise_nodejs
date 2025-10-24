@@ -263,3 +263,55 @@ exports.allowGateInFunc = async (req, res, next) => {
         next(error)
     }
 }
+
+exports.getVisitorHappyCode = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+
+        const OTP = req?.params?.otp;
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return errorResponse(res, "User does not exist", {}, 404)
+        }
+
+        const masterId = user?.created_by
+
+        const visitor = await Visitor.findOne({
+            created_by: masterId,
+            otp: OTP
+        })
+
+        if (!visitor) {
+            return errorResponse(res, "Visitor does not exist", {}, 404)
+        }
+
+        const checkDate = visitor?.check_in_date; // e.g. "2025-09-30"
+        const checkInFromTime = visitor?.check_in_from_time; // "03:00"
+        const checkInToTime = visitor?.check_in_to_time; // "10:00"
+
+        // Combine date + time into full Date objects
+        const fromDateTime = new Date(`${checkDate}T${checkInFromTime}:00`);
+        const toDateTime = new Date(`${checkDate}T${checkInToTime}:00`);
+        const now = new Date();
+
+        // Check status
+        let status;
+
+        if (now < fromDateTime) {
+            status = "Not started yet";
+        } else if (now >= fromDateTime && now <= toDateTime) {
+            status = "Ongoing";
+        } else if (now > toDateTime) {
+            status = "Expired";
+        }
+
+        res.status(200).json(status)
+
+
+    } catch (error) {
+        next(error)
+    }
+}
