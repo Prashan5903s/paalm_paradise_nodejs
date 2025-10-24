@@ -15,8 +15,6 @@ exports.getVisitorController = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        res.status(200).json("vhghg")
-
         const visitors = await Visitor.find({
                 created_by: userId
             })
@@ -33,7 +31,7 @@ exports.getVisitorController = async (req, res, next) => {
                 ]
             });
 
-        if (!visitors || visitors.length === 0) {
+        if (!visitors) {
             return errorResponse(res, "No visitors found", {}, 404);
         }
 
@@ -141,7 +139,58 @@ exports.getVisitorFilterController = async (req, res, next) => {
             });
 
         if (!visitors) {
-            return errorResponse(res, "Visitor does not exist", {}, 404);
+            return errorResponse(res, "No visitors found", {}, 404);
+        }
+
+        const now = new Date();
+        const bulkUpdates = [];
+
+        for (const visitor of visitors) {
+            const {
+                check_in_date,
+                check_in_from_time,
+                check_in_to_time,
+                status
+            } = visitor;
+
+            // If any field missing, skip this visitor
+            if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
+
+            // Combine date + time into full Date objects
+            const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
+            const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
+
+            let visitorStatus = 1; // default - not started
+
+            if (status === true || status === "true") {
+                visitorStatus = 4; // completed
+            } else if (now >= fromDateTime && now <= toDateTime) {
+                visitorStatus = 2; // ongoing
+            } else if (now > toDateTime) {
+                visitorStatus = 3; // expired
+            }
+
+            // Prepare bulk update
+            bulkUpdates.push({
+                updateOne: {
+                    filter: {
+                        _id: visitor._id
+                    },
+                    update: {
+                        $set: {
+                            visitor_status: visitorStatus
+                        }
+                    },
+                },
+            });
+
+            // Also update the in-memory object so the response is accurate
+            visitor.visitor_status = visitorStatus;
+        }
+
+        // Execute all updates together for better performance
+        if (bulkUpdates.length > 0) {
+            await Visitor.bulkWrite(bulkUpdates);
         }
 
         return successResponse(res, "Visitor fetched successfully", visitors);
