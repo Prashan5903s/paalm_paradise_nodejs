@@ -271,16 +271,8 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
         const OTP = req?.params?.otp;
 
-        const user = await User.findById(userId)
-
-        if (!user) {
-            return errorResponse(res, "User does not exist", {}, 404)
-        }
-
-        const masterId = user?.created_by
-
         const visitor = await Visitor.findOne({
-            created_by: masterId,
+            created_by: userId,
             otp: OTP
         })
 
