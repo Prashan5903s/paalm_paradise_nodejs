@@ -13,7 +13,6 @@ function generateSixDigitCode() {
 
 exports.getVisitorController = async (req, res, next) => {
     try {
-
         const userId = req.userId;
 
         const visitors = await Visitor.find({
@@ -32,15 +31,14 @@ exports.getVisitorController = async (req, res, next) => {
                 ]
             });
 
-
-        if (!visitors) {
-            return errorResponse(res, "Visitor does not exist", {}, 404)
+        if (!visitors || visitors.length === 0) {
+            return errorResponse(res, "No visitors found", {}, 404);
         }
 
         const now = new Date();
+        const bulkUpdates = [];
 
         for (const visitor of visitors) {
-
             const {
                 check_in_date,
                 check_in_from_time,
@@ -48,49 +46,52 @@ exports.getVisitorController = async (req, res, next) => {
                 status
             } = visitor;
 
-            res.status(200).json({
-                check_in_date,
-                check_in_from_time,
-                check_in_to_time,
-                status
-            })
+            // If any field missing, skip this visitor
+            if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
 
-            // Combine date + time into Date objects
+            // Combine date + time into full Date objects
             const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
             const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
 
-            let visitorStatus = 1; // default
+            let visitorStatus = 1; // default - not started
 
-            if (status == true || status == "true") {
-
-                visitorStatus = 4; // completed or true status
-
-            } else {
-                if (now < fromDateTime) {
-                    visitorStatus = 1; // not started yet
-                } else if (now >= fromDateTime && now <= toDateTime) {
-                    visitorStatus = 2; // ongoing
-                } else if (now > toDateTime) {
-                    visitorStatus = 3; // expired
-                }
+            if (status === true || status === "true") {
+                visitorStatus = 4; // completed
+            } else if (now >= fromDateTime && now <= toDateTime) {
+                visitorStatus = 2; // ongoing
+            } else if (now > toDateTime) {
+                visitorStatus = 3; // expired
             }
 
-            // Update each visitor’s status
-            await Visitor.updateOne({
-                _id: visitor._id
-            }, {
-                $set: {
-                    visitor_status: visitorStatus
-                }
+            // Prepare bulk update
+            bulkUpdates.push({
+                updateOne: {
+                    filter: {
+                        _id: visitor._id
+                    },
+                    update: {
+                        $set: {
+                            visitor_status: visitorStatus
+                        }
+                    },
+                },
             });
+
+            // Also update the in-memory object so the response is accurate
+            visitor.visitor_status = visitorStatus;
         }
 
-        return successResponse(res, "Visitor fetched successfully", visitors)
+        // Execute all updates together for better performance
+        if (bulkUpdates.length > 0) {
+            await Visitor.bulkWrite(bulkUpdates);
+        }
 
+        return successResponse(res, "Visitors fetched successfully", visitors);
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
+
 
 exports.getVisitorFilterController = async (req, res, next) => {
     try {
