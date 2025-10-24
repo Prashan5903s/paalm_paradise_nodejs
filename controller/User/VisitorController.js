@@ -271,36 +271,46 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
         const OTP = req?.params?.otp;
 
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return errorResponse(res, "User does not exist", {}, 404)
+        }
+
+        const masterId = user?.created_by
+
+        const users = await User.find({
+            created_by: masterId
+        }, '_id');
+
+        const userIds = users.map(user => user._id);
+
         const visitor = await Visitor.findOne({
-            created_by: userId,
+            created_by: {
+                $in: userIds
+            },
             otp: OTP
-        })
+        });
+
 
         if (!visitor) {
             return errorResponse(res, "Visitor does not exist", {}, 404)
         }
 
-        const checkDate = visitor?.check_in_date; // e.g. "2025-09-30"
-        const checkInFromTime = visitor?.check_in_from_time; // "03:00"
-        const checkInToTime = visitor?.check_in_to_time; // "10:00"
+        const checkDate = visitor?.check_in_date; 
+        const checkInToTime = visitor?.check_in_to_time; 
 
         // Combine date + time into full Date objects
-        const fromDateTime = new Date(`${checkDate}T${checkInFromTime}:00`);
+
         const toDateTime = new Date(`${checkDate}T${checkInToTime}:00`);
         const now = new Date();
 
-        // Check status
-        let status;
 
-        if (now < fromDateTime) {
-            status = "Not started yet";
-        } else if (now >= fromDateTime && now <= toDateTime) {
-            status = "Ongoing";
-        } else if (now > toDateTime) {
-            status = "Expired";
+        if (now > toDateTime) {
+            return successResponse(res, "Visitor time expired", {}, 500)
+        } else {
+            return successResponse(res, "Visitor data fetched successfully", visitor)
         }
-
-        res.status(200).json(status)
 
 
     } catch (error) {
