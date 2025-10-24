@@ -166,6 +166,18 @@ exports.putTenantController = async (req, res, next) => {
             return errorResponse(res, "Tenant does not exist", {}, 404)
         }
 
+        await Apartment.findOneAndUpdate({
+            tenant_assigned_to: id,
+            _id: {
+                $ne: apartment_id
+            }
+        }, {
+            $set: {
+                tenant_assigned_to: null
+            }
+        });
+
+
         await Apartment.findByIdAndUpdate(apartment_id, {
             tenant_assigned_to: id
         })
