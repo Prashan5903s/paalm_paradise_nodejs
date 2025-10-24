@@ -16,7 +16,7 @@ exports.getVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const visitor = await Visitor.find({
+        const visitors = await Visitor.find({
                 created_by: userId
             })
             .populate('user_id')
@@ -33,11 +33,50 @@ exports.getVisitorController = async (req, res, next) => {
             });
 
 
-        if (!visitor) {
+        if (!visitors) {
             return errorResponse(res, "Visitor does not exist", {}, 404)
         }
 
-        return successResponse(res, "Visitor fetched successfully", visitor)
+        const now = new Date();
+
+        for (const visitor of visitors) {
+            
+            const {
+                check_in_date,
+                check_in_from_time,
+                check_in_to_time,
+                status
+            } = visitor;
+
+            // Combine date + time into Date objects
+            const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
+            const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
+
+            let visitorStatus = 1; // default
+
+            if (status === true) {
+                visitorStatus = 4; // completed or true status
+            } else {
+                if (now < fromDateTime) {
+                    visitorStatus = 1; // not started yet
+                } else if (now >= fromDateTime && now <= toDateTime) {
+                    visitorStatus = 2; // ongoing
+                } else if (now > toDateTime) {
+                    visitorStatus = 3; // expired
+                }
+            }
+
+            // Update each visitor’s status
+            await Visitor.updateOne({
+                _id: visitor._id
+            }, {
+                $set: {
+                    visitor_status: visitorStatus
+                }
+            });
+        }
+
+        return successResponse(res, "Visitor fetched successfully", visitors)
 
     } catch (error) {
         next(error)
@@ -297,8 +336,8 @@ exports.getVisitorHappyCode = async (req, res, next) => {
             return errorResponse(res, "Visitor does not exist", {}, 404)
         }
 
-        const checkDate = visitor?.check_in_date; 
-        const checkInToTime = visitor?.check_in_to_time; 
+        const checkDate = visitor?.check_in_date;
+        const checkInToTime = visitor?.check_in_to_time;
 
         // Combine date + time into full Date objects
 
