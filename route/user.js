@@ -38,7 +38,7 @@ router.post("/complain/data/resolve", isAuth, complainResolvedController.postCom
 router.get("/visitor", isAuth, visitorController.getVisitorController);
 router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilterController);
 
-router.get('/visitor/happy/code/:otp', isAuth, visitorController.getVisitorHappyCode)
+router.get('/visitor/otp/code/:otp', isAuth, visitorController.getVisitorHappyCode)
 
 router.post("/visitor", isAuth, visitorController.postVisitorController);
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
