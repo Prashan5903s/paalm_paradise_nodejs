@@ -15,6 +15,8 @@ exports.getVisitorController = async (req, res, next) => {
     try {
         const userId = req.userId;
 
+        res.status(200).json("vhghg")
+
         const visitors = await Visitor.find({
                 created_by: userId
             })
