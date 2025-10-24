@@ -48,6 +48,13 @@ exports.getVisitorController = async (req, res, next) => {
                 status
             } = visitor;
 
+            res.status(200).json({
+                check_in_date,
+                check_in_from_time,
+                check_in_to_time,
+                status
+            })
+
             // Combine date + time into Date objects
             const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
             const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
@@ -55,7 +62,7 @@ exports.getVisitorController = async (req, res, next) => {
             let visitorStatus = 1; // default
 
             if (status == true || status == "true") {
-                
+
                 visitorStatus = 4; // completed or true status
 
             } else {
