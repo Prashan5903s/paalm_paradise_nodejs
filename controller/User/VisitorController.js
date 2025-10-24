@@ -40,7 +40,7 @@ exports.getVisitorController = async (req, res, next) => {
         const now = new Date();
 
         for (const visitor of visitors) {
-            
+
             const {
                 check_in_date,
                 check_in_from_time,
@@ -54,8 +54,10 @@ exports.getVisitorController = async (req, res, next) => {
 
             let visitorStatus = 1; // default
 
-            if (status === true) {
+            if (status == true || status == "true") {
+                
                 visitorStatus = 4; // completed or true status
+
             } else {
                 if (now < fromDateTime) {
                     visitorStatus = 1; // not started yet
