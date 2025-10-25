@@ -39,7 +39,6 @@ exports.getVisitorController = async (req, res, next) => {
 
         const visitors = await Visitor.find({
                 created_by: userId,
-                _id: "68edb9bfd171d7d83b07d8ba"
             })
             .populate('user_id')
             .populate('category')
@@ -77,9 +76,7 @@ exports.getVisitorController = async (req, res, next) => {
             const fromDateTime = new Date(`${check_in_date}T${toFrom24}:00`);
 
             const toTime24 = convertTo24Hour(check_in_to_time);
-            const toDateTimess = new Date(`${check_in_date}T${toTime24}:00`);
-
-            res.status(200).json([check_in_date, check_in_to_time, toDateTimess, now])
+            const toDateTime = new Date(`${check_in_date}T${toTime24}:00`);
 
             let visitorStatus = 1; // default - not started
 
@@ -184,9 +181,11 @@ exports.getVisitorFilterController = async (req, res, next) => {
             // If any field missing, skip this visitor
             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
 
-            // Combine date + time into full Date objects
-            const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
-            const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
+            const toFrom24 = convertTo24Hour(check_in_from_time);
+            const fromDateTime = new Date(`${check_in_date}T${toFrom24}:00`);
+
+            const toTime24 = convertTo24Hour(check_in_to_time);
+            const toDateTime = new Date(`${check_in_date}T${toTime24}:00`);
 
             let visitorStatus = 1; // default - not started
 
