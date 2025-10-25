@@ -425,7 +425,9 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
         // Combine date + time into full Date objects
 
-        const toDateTime = new Date(`${checkDate}T${checkInToTime}:00`);
+        const toTime24 = convertTo24Hour(check_in_to_time);
+        const toDateTime = new Date(`${check_in_date}T${toTime24}:00`);
+
         const now = new Date();
 
 
