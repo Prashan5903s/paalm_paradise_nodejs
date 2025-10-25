@@ -60,7 +60,7 @@ exports.getVisitorController = async (req, res, next) => {
                 visitorStatus = 4; // completed
             } else if (now >= fromDateTime && now <= toDateTime) {
                 visitorStatus = 2; // ongoing
-            } else if (now > toDateTime) {
+            } else if (now > toDateTime && now > fromDateTime) {
                 visitorStatus = 3; // expired
             }
 
@@ -167,7 +167,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 visitorStatus = 4; // completed
             } else if (now >= fromDateTime && now <= toDateTime) {
                 visitorStatus = 2; // ongoing
-            } else if (now > toDateTime || now < fromDateTime) {
+            } else if (now > toDateTime && now > fromDateTime) {
                 visitorStatus = 3; // expired
             }
 
