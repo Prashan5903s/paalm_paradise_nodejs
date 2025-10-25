@@ -53,9 +53,9 @@ exports.getVisitorController = async (req, res, next) => {
 
             // Combine date + time into full Date objects
             const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
-            const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
+            const toDateTimess = new Date(`${check_in_date}T${check_in_to_time}:00`);
 
-            res.status(200).json([check_in_date, check_in_to_time ,toDateTime, now])
+            res.status(200).json([check_in_date, check_in_to_time ,toDateTimess, now])
 
             let visitorStatus = 1; // default - not started
 
