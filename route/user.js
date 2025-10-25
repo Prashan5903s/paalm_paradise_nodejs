@@ -13,10 +13,20 @@ const dashboardController = require("../controller/User/DashboardController");
 const noticeController = require("../controller/User/NoticeController");
 const eventController = require("../controller/User/EventController");
 const appConfigController = require('../controller/User/AppConfigAPIController')
+const profileController = require('../controller/User/profileAPIController')
 
+const createUpload = require('../util/upload');
+
+const {
+    middleware: imageUpload
+} = createUpload(
+    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+    'uploads/images' // directory inside /public/
+);
 
 // ==================== 💰 BILL ROUTES ====================
 router.get("/my-bill/:type/:status", isAuth, BillController.getBillController);
+router.get('/bill/maintenance/data/:status', isAuth, BillController.getMaintenanceBill)
 
 // ✅ Generate or Download Invoice PDF
 router.get("/invoice/pdf/page/:invoiceNo", isAuth, BillController.downloadInvoicePDF);
@@ -54,8 +64,10 @@ router.get("/notice", isAuth, noticeController.getNoticeController);
 // ==================== 🎉 EVENT ====================
 router.get("/event", isAuth, eventController.getEventListAPIController);
 
-router.get('/bill/maintenance/data/:status', isAuth, BillController.getMaintenanceBill)
-
+// This route is for app config data
 router.get('/app/config/data', isAuth, appConfigController.getConfigAPIController)
+
+//This route is for profile
+router.post('/profile/user/data', isAuth, imageUpload('photo'), profileController.postProfileAPIController)
 
 module.exports = router;
