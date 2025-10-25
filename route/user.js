@@ -34,7 +34,7 @@ router.get("/invoice/pdf/page/:invoiceNo", isAuth, BillController.downloadInvoic
 // ==================== 📢 COMPLAIN ROUTES ====================
 router.get("/my-complain", isAuth, ComplainController.getMyComplainController);
 
-router.get("/my-user-complain/:start/:end", isAuth, ComplainController.getMyComplainFilterController);
+router.get("/my-user-complain/:status/:start/:end", isAuth, ComplainController.getMyComplainFilterController);
 
 router.post("/my-complain", isAuth, ComplainController.postComplainController);
 router.get("/my-complain/data/create", isAuth, ComplainController.getCreateComplainController);

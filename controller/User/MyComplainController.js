@@ -86,25 +86,23 @@ exports.getMyComplainFilterController = async (req, res, next) => {
         const start = req?.params?.start ? new Date(req.params.start) : null;
         const end = req?.params?.end ? new Date(req.params.end) : null;
 
+        const status = req?.params?.status;
+
         const matchCondition = {
-            created_by: new mongoose.Types.ObjectId(userId)
+            created_by: new mongoose.Types.ObjectId(userId),
+            complaint_status: status
         };
 
-        // अगर start और end दोनों मौजूद हैं
         if (start && end) {
             matchCondition.created_at = {
                 $gte: start,
                 $lte: end
             };
-        }
-        // सिर्फ start है
-        else if (start) {
+        } else if (start) {
             matchCondition.created_at = {
                 $gte: start
             };
-        }
-        // सिर्फ end है
-        else if (end) {
+        } else if (end) {
             matchCondition.created_at = {
                 $lte: end
             };
