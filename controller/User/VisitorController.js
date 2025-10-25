@@ -11,6 +11,27 @@ function generateSixDigitCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function convertTo24Hour(timeStr) {
+    if (!timeStr) return null;
+
+    // Normalize spacing and uppercase (handles inputs like "3:05pm" or "03:05  pm")
+    timeStr = timeStr.trim().toUpperCase();
+
+    const [time, modifier] = timeStr.split(" ");
+    if (!time || !modifier) return timeStr; // already in 24-hour format
+
+    let [hours, minutes] = time.split(":").map(Number);
+
+    if (modifier === "PM" && hours !== 12) {
+        hours += 12;
+    }
+    if (modifier === "AM" && hours === 12) {
+        hours = 0;
+    }
+
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
 exports.getVisitorController = async (req, res, next) => {
     try {
 
@@ -52,10 +73,13 @@ exports.getVisitorController = async (req, res, next) => {
             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
 
             // Combine date + time into full Date objects
-            const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
-            const toDateTimess = new Date(`${check_in_date}T${check_in_to_time}:00`);
+            const toFrom24 = convertTo24Hour(check_in_from_time);
+            const fromDateTime = new Date(`${check_in_date}T${toFrom24}:00`);
 
-            res.status(200).json([check_in_date, check_in_to_time ,toDateTimess, now])
+            const toTime24 = convertTo24Hour(check_in_to_time);
+            const toDateTimess = new Date(`${check_in_date}T${toTime24}:00`);
+
+            res.status(200).json([check_in_date, check_in_to_time, toDateTimess, now])
 
             let visitorStatus = 1; // default - not started
 
