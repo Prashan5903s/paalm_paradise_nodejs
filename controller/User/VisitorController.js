@@ -376,9 +376,19 @@ exports.allowGateInFunc = async (req, res, next) => {
 
         const id = req?.params?.id;
 
-        await Visitor.findByIdAndUpdate(id, {
-            status: true
-        })
+        const status = req?.params?.status;
+
+        if (status == true || status == "true") {
+            await Visitor.findByIdAndUpdate(id, {
+                status: true,
+                visitor_status: 4
+            })
+        } else {
+            await Visitor.findByIdAndUpdate(id, {
+                status: false,
+                visitor_status: 2
+            })
+        }
 
         return successResponse(res, "Visitor allowed successfully")
 

@@ -43,7 +43,7 @@ router.get('/visitor/otp/code/:otp', isAuth, visitorController.getVisitorHappyCo
 router.post("/visitor", isAuth, visitorController.postVisitorController);
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
 router.put("/visitor/update/:id", isAuth, visitorController.putVisitiorController);
-router.get("/visitor/allow/gateIn/:id", isAuth, visitorController.allowGateInFunc);
+router.get("/visitor/allow/gateIn/:status/:id", isAuth, visitorController.allowGateInFunc);
 
 // ==================== 📊 DASHBOARD ====================
 router.get("/dashboard", isAuth, dashboardController.getDashboardDataAPI);
