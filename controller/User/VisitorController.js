@@ -102,7 +102,8 @@ exports.getVisitorFilterController = async (req, res, next) => {
 
         // बेसिक condition
         const filter = {
-            created_by: userId
+            created_by: userId,
+            _id: "68edb9bfd171d7d83b07d8ba"
         };
 
         // अगर start और end दोनों हैं
@@ -162,6 +163,8 @@ exports.getVisitorFilterController = async (req, res, next) => {
             const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
 
             let visitorStatus = 1; // default - not started
+
+            res.status().json([toDateTime, now])
 
             if (status === true || status === "true") {
                 visitorStatus = 4; // completed
