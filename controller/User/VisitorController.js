@@ -17,7 +17,8 @@ exports.getVisitorController = async (req, res, next) => {
         const userId = req.userId;
 
         const visitors = await Visitor.find({
-                created_by: userId
+                created_by: userId,
+                _id: "68edb9bfd171d7d83b07d8ba"
             })
             .populate('user_id')
             .populate('category')
@@ -54,13 +55,15 @@ exports.getVisitorController = async (req, res, next) => {
             const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
             const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
 
+            res.status().json([toDateTime, now])
+
             let visitorStatus = 1; // default - not started
 
             if (status === true || status === "true") {
                 visitorStatus = 4; // completed
             } else if (now >= fromDateTime && now <= toDateTime) {
                 visitorStatus = 2; // ongoing
-            } else if (now > toDateTime && now > fromDateTime) {
+            } else if (now > toDateTime) {
                 visitorStatus = 3; // expired
             }
 
