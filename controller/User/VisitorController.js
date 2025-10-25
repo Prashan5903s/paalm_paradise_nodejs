@@ -193,7 +193,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 visitorStatus = 4; // completed
             } else if (now >= fromDateTime && now <= toDateTime) {
                 visitorStatus = 2; // ongoing
-            } else if (now > toDateTime && now > fromDateTime) {
+            } else if (now > toDateTime) {
                 visitorStatus = 3; // expired
             }
 
