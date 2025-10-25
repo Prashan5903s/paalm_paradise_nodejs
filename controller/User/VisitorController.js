@@ -13,6 +13,7 @@ function generateSixDigitCode() {
 
 exports.getVisitorController = async (req, res, next) => {
     try {
+
         const userId = req.userId;
 
         const visitors = await Visitor.find({
@@ -166,7 +167,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 visitorStatus = 4; // completed
             } else if (now >= fromDateTime && now <= toDateTime) {
                 visitorStatus = 2; // ongoing
-            } else if (now > toDateTime) {
+            } else if (now > toDateTime || now < fromDateTime) {
                 visitorStatus = 3; // expired
             }
 
