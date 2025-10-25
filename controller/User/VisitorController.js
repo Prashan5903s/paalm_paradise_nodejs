@@ -18,7 +18,6 @@ exports.getVisitorController = async (req, res, next) => {
 
         const visitors = await Visitor.find({
                 created_by: userId,
-                _id: "68edb9bfd171d7d83b07d8ba"
             })
             .populate('user_id')
             .populate('category')
@@ -54,8 +53,6 @@ exports.getVisitorController = async (req, res, next) => {
             // Combine date + time into full Date objects
             const fromDateTime = new Date(`${check_in_date}T${check_in_from_time}:00`);
             const toDateTime = new Date(`${check_in_date}T${check_in_to_time}:00`);
-
-            res.status().json([toDateTime, now])
 
             let visitorStatus = 1; // default - not started
 
