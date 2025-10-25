@@ -54,6 +54,7 @@ exports.postAPILogIn = (req, res, next) => {
                 expiresAt: expirationTimestamp,
                 userId: loadedUser._id.toString(),
                 email: decrypt(loadedUser.email),
+                photo: loadedUser.photo,
                 name: loadedUser.first_name + " " + loadedUser.last_name
             });
         })
