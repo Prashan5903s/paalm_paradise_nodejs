@@ -90,7 +90,7 @@ exports.getMyComplainFilterController = async (req, res, next) => {
 
         const matchCondition = {
             created_by: new mongoose.Types.ObjectId(userId),
-            complaint_status: status
+            complain_status: status
         };
 
         if (start && end) {
