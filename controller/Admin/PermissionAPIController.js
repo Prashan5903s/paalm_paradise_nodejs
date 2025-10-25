@@ -423,6 +423,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
 
                 }
             } else {
+                
                 const roles = await RoleUser.find({ user_id: userId }).select("role_id");
 
                 const roleIds = roles.map(r => r.role_id);

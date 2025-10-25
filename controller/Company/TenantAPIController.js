@@ -1,5 +1,6 @@
 const Apartment = require('../../model/Apartment')
 const User = require('../../model/User')
+const RoleUser = require('../../model/RoleUser')
 const bcrypt = require('bcryptjs')
 const {
     successResponse,
@@ -123,6 +124,14 @@ exports.postTenantAPIController = async (req, res, next) => {
 
         await tenant.save()
 
+        const roleUser = new RoleUser({
+            user_id: tenant._id,
+            role_id: "68fcb8aa19932a2fcc0450b9",
+            assigned_by: userId
+        })
+
+        await roleUser.save();
+
         await Apartment.findByIdAndUpdate(apartment_id, {
             tenant_assigned_to: tenant._id
         })
@@ -164,6 +173,22 @@ exports.putTenantController = async (req, res, next) => {
 
         if (!user) {
             return errorResponse(res, "Tenant does not exist", {}, 404)
+        }
+
+        const roleUser = await RoleUser.findOne({
+            user_id: id
+        })
+
+        if (!roleUser) {
+
+            const roleUser = new RoleUser({
+                user_id: id,
+                role_id: "68fcb8aa19932a2fcc0450b9",
+                assigned_by: userId
+            })
+
+            await roleUser.save();
+
         }
 
         await Apartment.findOneAndUpdate({
