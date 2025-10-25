@@ -1,6 +1,7 @@
 const Visitor = require('../../model/Visitor');
 const Apartment = require('../../model/Apartment')
 const User = require('../../model/User')
+const RoleUser = require('../../model/RoleUser')
 const VisitorType = require('../../model/VisitorType')
 const {
     errorResponse,
@@ -118,30 +119,44 @@ exports.getVisitorController = async (req, res, next) => {
 
 exports.getVisitorFilterController = async (req, res, next) => {
     try {
+        
         const userId = req.userId;
         const start = req?.params?.start ? new Date(req.params.start) : null;
         const end = req?.params?.end ? new Date(req.params.end) : null;
 
-        // बेसिक condition
-        const filter = {
-            created_by: userId
-        };
+        const roleUser = await RoleUser.find({
+            user_id: userId
+        });
 
-        // अगर start और end दोनों हैं
+        const hasRole = roleUser.some(r => r.role_id.toString() === "68cd0e38c2d476bd45384234");
+
+        const users = await User.findById(userId);
+        const masterId = users?.created_by;
+
+        // Get all users created by master
+        const userData = await User.find({
+            created_by: masterId
+        });
+        const userIds = userData.map(user => user._id.toString());
+
+        // Base filter
+        const filter = {};
+
+        filter.created_by = hasRole ? {
+            $in: userIds
+        } : userId;
+
+        // Optional date filters
         if (start && end) {
             filter.created_at = {
                 $gte: start,
                 $lte: end
             };
-        }
-        // सिर्फ start है
-        else if (start) {
+        } else if (start) {
             filter.created_at = {
                 $gte: start
             };
-        }
-        // सिर्फ end है
-        else if (end) {
+        } else if (end) {
             filter.created_at = {
                 $lte: end
             };
@@ -160,6 +175,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                     }
                 ]
             });
+
 
         if (!visitors) {
             return errorResponse(res, "No visitors found", {}, 404);
