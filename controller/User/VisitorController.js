@@ -423,7 +423,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
                 $in: userIds
             },
             otp: OTP
-        });
+        }).populate("apartment_id").populate("user_id").populate("category");
 
 
         if (!visitor) {
