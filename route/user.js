@@ -14,6 +14,7 @@ const noticeController = require("../controller/User/NoticeController");
 const eventController = require("../controller/User/EventController");
 const appConfigController = require('../controller/User/AppConfigAPIController')
 const profileController = require('../controller/User/profileAPIController')
+const authController = require('../controller/User/AuthController')
 
 const createUpload = require('../util/upload');
 
@@ -69,5 +70,8 @@ router.get('/app/config/data', isAuth, appConfigController.getConfigAPIControlle
 
 //This route is for profile
 router.post('/profile/user/data', isAuth, imageUpload('photo'), profileController.postProfileAPIController)
+
+//This route is for logout
+router.get('/logout/data', isAuth, authController.getLogOutController)
 
 module.exports = router;
