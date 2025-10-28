@@ -12,7 +12,7 @@ exports.getComplainController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const status = req?.status;
+        const status = Number(req?.params.status);
 
         const users = await User.find({
             created_by: userId,
