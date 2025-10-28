@@ -180,6 +180,7 @@ exports.postBillController = async (req, res, next) => {
             });
 
             await Promise.all(
+                
                 apartments.map(item => {
 
                     const apartmentType = item?.apartment_type;

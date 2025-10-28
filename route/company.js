@@ -89,7 +89,7 @@ router.get('/user/bill/:billId', isAuth, userBillController.getUserBillControlle
 router.post('/user/bill/data/payment', isAuth, userBillController.postUserBillController)
 
 //This route is for company
-router.get('/complain', isAuth, complainController.getComplainController)
+router.get('/complain/data/:status', isAuth, complainController.getComplainController)
 router.get('/complain/create', isAuth, complainController.createComplainController)
 router.post('/complain/data/:id/:code', isAuth, complainController.postComplainController)
 

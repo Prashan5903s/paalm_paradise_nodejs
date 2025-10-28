@@ -12,19 +12,25 @@ exports.getComplainController = async (req, res, next) => {
 
         const userId = req.userId;
 
+        const status = req?.status;
+
         const users = await User.find({
             created_by: userId,
             user_type: {
                 $ne: "4"
             }
         }).select('_id');
+
         const userIds = users.map(u => u._id);
 
         const complain = await Complain.aggregate([{
                 $match: {
                     created_by: {
                         $in: userIds
-                    }
+                    },
+                    ...(status && {
+                        complain_status: status
+                    }),
                 }
             },
             {

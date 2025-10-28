@@ -90,6 +90,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                 $ne: "4"
             }
         }).select('_id');
+
         const userIds = user.map(o => o._id); // Keep as ObjectId, don't convert to string
 
         const pendingComplain = await getComplainsByStatus(userIds, "1");
@@ -174,6 +175,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             bill_data_type: "maintenance",
             created_by: userId
         }).select('_id');
+        
         const billsId = bills.map(b => b._id.toString())
 
         const userBill = await UserBill.find({
@@ -190,14 +192,14 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             .populate('payments');
 
         let maintenance = await Maintenance.findOne({
-            cost_type: "2",
+            status: true,
             created_by: userId,
         });
 
         if (!maintenance) {
             maintenance = await Maintenance.findOne({
-                cost_type: "1",
                 created_by: userId,
+                status: true,
             });
         }
 

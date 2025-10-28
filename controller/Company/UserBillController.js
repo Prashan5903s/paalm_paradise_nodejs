@@ -170,14 +170,14 @@ exports.getUserBillController = async (req, res, next) => {
         ]);
 
         let maintenance = await Maintenance.findOne({
-            cost_type: "2",
             created_by: userId,
+            status: true,
         });
 
         if (!maintenance) {
             maintenance = await Maintenance.findOne({
-                cost_type: "1",
                 created_by: userId,
+                status: true,
             });
         }
 

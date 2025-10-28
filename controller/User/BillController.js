@@ -62,13 +62,13 @@ exports.getBillController = async (req, res, next) => {
                 .populate("payments");
 
             let maintenance = await Maintenance.findOne({
-                cost_type: "2",
+                status: true,
                 created_by: masterId,
             });
 
             if (!maintenance) {
                 maintenance = await Maintenance.findOne({
-                    cost_type: "1",
+                    status: true,
                     created_by: masterId,
                 });
             }
