@@ -12,6 +12,7 @@ exports.getComplainController = async (req, res, next) => {
 
         const userId = req.userId;
 
+
         const users = await User.find({
             created_by: userId,
             user_type: {
@@ -46,7 +47,7 @@ exports.getComplainController = async (req, res, next) => {
                         {
                             $sort: {
                                 created_at: 1
-                            }
+                            } // oldest → latest
                         }
                     ],
                     as: "complain_users"
@@ -61,7 +62,7 @@ exports.getComplainController = async (req, res, next) => {
                 }
             },
             {
-
+                // ✅ filter by the latest complain user’s complaint_status
                 $match: {
                     "latest_complain_user.complaint_status": status
                 }
@@ -82,7 +83,7 @@ exports.getComplainController = async (req, res, next) => {
             },
             {
                 $project: {
-                    complain_users: 0 // hide raw array
+                    complain_users: 0 // hide full complain_users array
                 }
             }
         ]);
