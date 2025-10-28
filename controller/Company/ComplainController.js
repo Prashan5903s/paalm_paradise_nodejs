@@ -22,7 +22,7 @@ exports.getComplainController = async (req, res, next) => {
 
         const userIds = users.map(u => u._id);
 
-        const status = Number(req?.params.status);
+        const status = (req?.params.status);
 
         const complain = await Complain.aggregate([{
                 $match: {
