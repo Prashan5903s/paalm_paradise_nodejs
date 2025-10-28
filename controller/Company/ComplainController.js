@@ -12,8 +12,6 @@ exports.getComplainController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const status = Number(req?.params.status);
-
         const users = await User.find({
             created_by: userId,
             user_type: {
@@ -23,14 +21,13 @@ exports.getComplainController = async (req, res, next) => {
 
         const userIds = users.map(u => u._id);
 
+        const status = Number(req?.params.status);
+
         const complain = await Complain.aggregate([{
                 $match: {
                     created_by: {
                         $in: userIds
-                    },
-                    ...(status && {
-                        complain_status: status
-                    }),
+                    }
                 }
             },
             {
@@ -50,17 +47,23 @@ exports.getComplainController = async (req, res, next) => {
                             $sort: {
                                 created_at: 1
                             }
-                        } // oldest → latest
+                        }
                     ],
                     as: "complain_users"
                 }
             },
             {
                 $addFields: {
-                    all_complain_users: "$complain_users", // पूरा data
+                    all_complain_users: "$complain_users",
                     latest_complain_user: {
                         $last: "$complain_users"
-                    } // 👈 सबसे आखिरी वाला (latest)
+                    }
+                }
+            },
+            {
+
+                $match: {
+                    "latest_complain_user.complaint_status": status
                 }
             },
             {
@@ -79,7 +82,7 @@ exports.getComplainController = async (req, res, next) => {
             },
             {
                 $project: {
-                    complain_users: 0 // raw field hide
+                    complain_users: 0 // hide raw array
                 }
             }
         ]);
