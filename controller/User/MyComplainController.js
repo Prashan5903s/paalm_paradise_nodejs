@@ -90,7 +90,6 @@ exports.getMyComplainFilterController = async (req, res, next) => {
 
         const matchCondition = {
             created_by: new mongoose.Types.ObjectId(userId),
-            complain_status: Number(status)
         };
 
         if (start && end) {
@@ -126,20 +125,24 @@ exports.getMyComplainFilterController = async (req, res, next) => {
                         },
                         {
                             $sort: {
-                                created_at: -1
-                            }
-                        },
-                        {
-                            $limit: 1
+                                created_at: 1
+                            } // oldest → latest
                         }
                     ],
-                    as: "latest_complain_user"
+                    as: "complain_users"
                 }
             },
             {
-                $unwind: {
-                    path: "$latest_complain_user",
-                    preserveNullAndEmptyArrays: true
+                $addFields: {
+                    latest_complain_user: {
+                        $last: "$complain_users"
+                    }
+                }
+            },
+            {
+                // ✅ filter by latest complain user’s complaint_status
+                $match: {
+                    "latest_complain_user.complaint_status": status
                 }
             },
             {
@@ -155,9 +158,27 @@ exports.getMyComplainFilterController = async (req, res, next) => {
                     path: "$category",
                     preserveNullAndEmptyArrays: true
                 }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "assigned_to.user",
+                    foreignField: "_id",
+                    as: "assigned_user"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$assigned_user",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $project: {
+                    complain_users: 0 // hide the full complain_users array
+                }
             }
         ]);
-
 
         if (!complains) {
             return errorResponse(res, "Complain does not exist", {}, 404);
