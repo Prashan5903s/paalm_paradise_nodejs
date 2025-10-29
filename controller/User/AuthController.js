@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const BlacklistedToken = require('../../model/BlacklistedToken');
 const User = require('../../model/User')
+const bcrypt = require('bcryptjs')
 const {
     errorResponse,
     successResponse
