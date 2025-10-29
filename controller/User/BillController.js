@@ -290,20 +290,35 @@ exports.getMaintenanceBill = async (req, res, next) => {
         const status = req?.params?.status;
         const userId = req?.userId;
 
+        // ✅ Validate required data
+        if (!userId) {
+            return errorResponse(res, "User ID missing in request", {}, 400);
+        }
+
         const user = await User.findById(userId);
         const masterId = user?.created_by;
 
+        if (!masterId) {
+            return errorResponse(res, "Master user not found", {}, 404);
+        }
+
+        // ✅ Fetch all maintenance bills created by master
         const bills = await Bill.find({
             bill_data_type: "maintenance",
             created_by: masterId,
         }).select("_id");
 
-        const billsId = bills.map((b) => b._id.toString());
+        if (!bills.length) {
+            return errorResponse(res, "No maintenance bills found", {}, 404);
+        }
 
+        const billIds = bills.map((b) => b._id.toString());
+
+        // ✅ Fetch user-specific bills with relations
         const userBill = await UserBill.find({
                 user_id: userId,
                 bill_id: {
-                    $in: billsId
+                    $in: billIds
                 },
             })
             .populate("bill_id")
@@ -311,6 +326,11 @@ exports.getMaintenanceBill = async (req, res, next) => {
             .populate("user_id")
             .populate("payments");
 
+        if (!userBill?.length) {
+            return errorResponse(res, "User bill does not exist", {}, 404);
+        }
+
+        // ✅ Fetch maintenance cost configuration
         let maintenance = await Maintenance.findOne({
             cost_type: "2",
             created_by: masterId,
@@ -328,13 +348,8 @@ exports.getMaintenanceBill = async (req, res, next) => {
             maintenance.fixed_data :
             maintenance?.unit_type || [];
 
-        if (!userBill || userBill.length === 0) {
-            return errorResponse(res, "User bill does not exist", {}, 404);
-        }
-
-        // ✅ Create fixed cost map (no useMemo in Node.js)
+        // ✅ Create fixed cost map
         const fixedCostMap = new Map();
-
         if (Array.isArray(fixedData) && fixedData.length > 0) {
             fixedData.forEach((item) => {
                 fixedCostMap.set(item.apartment_type, Number(item.unit_value || 0));
@@ -343,7 +358,7 @@ exports.getMaintenanceBill = async (req, res, next) => {
             fixedCostMap.set("default", Number(fixedData.unit_value || 0));
         }
 
-        // ✅ Grouping logic
+        // ✅ Group and calculate total/paid cost
         const grouped = {};
 
         userBill.forEach((row) => {
@@ -360,13 +375,12 @@ exports.getMaintenanceBill = async (req, res, next) => {
                 };
             }
 
-            // ✅ Fixed cost calculation
+            // ✅ Cost calculation
             const additionalCost = row?.bill_id?.additional_cost || [];
             const apartmentType = row?.apartment_id?.apartment_type || "";
             const apartmentArea = Number(row?.apartment_id?.apartment_area || 0);
 
             let fixedCost = 0;
-
             if (fixedCostMap.has(apartmentType)) {
                 fixedCost = Number(fixedCostMap.get(apartmentType)) || 0;
             } else if (fixedCostMap.has("default")) {
@@ -384,36 +398,29 @@ exports.getMaintenanceBill = async (req, res, next) => {
                 0
             );
 
-            // ✅ Apply .toFixed(0) consistently and ensure numeric type
             grouped[key].total_cost = Number(totalCost.toFixed(0));
             grouped[key].paid_cost = Number(paidCost.toFixed(0));
-
             grouped[key].status =
                 grouped[key].paid_cost >= grouped[key].total_cost ? "Paid" : "Unpaid";
         });
 
         const processedData = Object.values(grouped);
 
-        // ✅ Filter by status param (if given)
-
+        // ✅ Filter by `status` param (true = paid, false = unpaid)
         let finalData = processedData;
-
-        if (status == "true") {
-            finalData = processedData.filter(
-                (row) => row.status.toLowerCase() === "paid"
-            );
-        } else {
-            finalData = processedData.filter(
-                (row) => row.status.toLowerCase() === "unpaid"
-            );
+        if (status === "true") {
+            finalData = processedData.filter((row) => row.status === "Paid");
+        } else if (status === "false") {
+            finalData = processedData.filter((row) => row.status === "Unpaid");
         }
 
         return successResponse(
             res,
-            "Maintenance bill fetched successfully",
+            "Maintenance bills fetched successfully",
             finalData
         );
     } catch (error) {
-        next(error);
+        console.error("getMaintenanceBill error:", error);
+        return next(error);
     }
 };
