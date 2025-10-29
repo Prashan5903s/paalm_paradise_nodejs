@@ -39,7 +39,19 @@ exports.getBillController = async (req, res, next) => {
                     model: "Payment",
                 });
 
-            data = bills;
+            const pendingBill = await Bill.find({
+                status: false,
+                bill_data_type: type,
+                created_by: masterId,
+            });
+
+            const pendingBillCount = pendingBill.length;
+
+            data = {
+                bills,
+                count: pendingBillCount
+            };
+
         } else if (type === "maintenance") {
             let datas = {};
 
@@ -84,7 +96,8 @@ exports.getBillController = async (req, res, next) => {
 
             data = datas;
         } else {
-            data = await Bill.find({
+
+            const bills = await Bill.find({
                     created_by: masterId,
                     status: statusField,
                     bill_data_type: type,
@@ -95,6 +108,20 @@ exports.getBillController = async (req, res, next) => {
                     path: "payments",
                     model: "Payment",
                 });
+
+            const pendingBill = await Bill.find({
+                status: false,
+                bill_data_type: type,
+                created_by: masterId,
+            });
+
+            const pendingBillCount = pendingBill.length;
+
+            data = {
+                bills,
+                count: pendingBillCount
+            }
+
         }
 
         return successResponse(res, "Bill fetched successfully", data);
