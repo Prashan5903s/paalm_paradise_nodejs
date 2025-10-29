@@ -368,10 +368,9 @@ exports.getMaintenanceBill = async (req, res, next) => {
             let fixedCost = 0;
 
             if (fixedCostMap.has(apartmentType)) {
-                fixedCost = fixedCostMap.get(apartmentType);
+                fixedCost = Number(fixedCostMap.get(apartmentType)) || 0;
             } else if (fixedCostMap.has("default")) {
-
-                fixedCost = fixedCostMap.get("default") * apartmentArea;
+                fixedCost = (Number(fixedCostMap.get("default")) || 0) * apartmentArea;
             }
 
             const additionalTotal = additionalCost.reduce(
@@ -379,13 +378,15 @@ exports.getMaintenanceBill = async (req, res, next) => {
                 0
             );
 
-            grouped[key].total_cost = fixedCost + additionalTotal;
+            const totalCost = fixedCost + additionalTotal;
+            const paidCost = (row?.payments || []).reduce(
+                (sum, val) => sum + (Number(val.amount) || 0),
+                0
+            );
 
-            grouped[key].paid_cost =
-                (row?.payments || []).reduce(
-                    (sum, val) => sum + (Number(val.amount) || 0),
-                    0
-                );
+            // ✅ Apply .toFixed(0) consistently and ensure numeric type
+            grouped[key].total_cost = Number(totalCost.toFixed(0));
+            grouped[key].paid_cost = Number(paidCost.toFixed(0));
 
             grouped[key].status =
                 grouped[key].paid_cost >= grouped[key].total_cost ? "Paid" : "Unpaid";
