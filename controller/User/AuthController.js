@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const BlacklistedToken = require('../../model/BlacklistedToken');
+const User = require('../../model/User')
 const {
     errorResponse,
     successResponse
@@ -47,7 +48,7 @@ exports.changePasswordController = async (req, res, next) => {
             confirmPassword
         } = req.body;
 
-        const userId = req.userId;
+        const userId = req?.userId;
 
         if (!oldPassword || !password || !confirmPassword) {
             return errorResponse(res, "All fields are required", {}, 404)
