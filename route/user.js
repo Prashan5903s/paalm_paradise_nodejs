@@ -74,4 +74,7 @@ router.post('/profile/user/data', isAuth, imageUpload('photo'), profileControlle
 //This route is for logout
 router.get('/logout/data', isAuth, authController.getLogOutController)
 
+//This route is for change password
+router.post('/change/password/data', isAuth, authController.changePasswordController)
+
 module.exports = router;

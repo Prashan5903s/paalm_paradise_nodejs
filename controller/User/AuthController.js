@@ -38,3 +38,47 @@ exports.getLogOutController = async (req, res, next) => {
         next(err);
     }
 };
+
+exports.changePasswordController = async (req, res, next) => {
+    try {
+        const {
+            oldPassword,
+            password,
+            confirmPassword
+        } = req.body;
+
+        const userId = req.userId;
+
+        if (!oldPassword || !password || !confirmPassword) {
+            return errorResponse(res, "All fields are required", {}, 404)
+        }
+
+        if (password !== confirmPassword) {
+            return errorResponse(res, "Passwords do not match", {}, 500)
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return errorResponse(res, "User not found", {}, 404)
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+
+        if (!isMatch) {
+            return errorResponse(res, "Old password is incorrect", {}, 500)
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        user.password = hashedPassword;
+
+        await user.save();
+
+        // 7. Respond success
+        return successResponse(res, "Password changes successfully")
+
+    } catch (err) {
+        next(err)
+    }
+};
