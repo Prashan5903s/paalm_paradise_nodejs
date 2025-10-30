@@ -25,6 +25,13 @@ const {
     'uploads/images' // directory inside /public/
 );
 
+const {
+    middleware: imageVisitorUpload
+} = createUpload(
+    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+    'uploads/visitor' // directory inside /public/
+);
+
 // ==================== 💰 BILL ROUTES ====================
 router.get("/my-bill/:type/:status", isAuth, BillController.getBillController);
 router.get('/bill/maintenance/data/:status', isAuth, BillController.getMaintenanceBill)
@@ -51,9 +58,9 @@ router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilt
 
 router.get('/visitor/otp/code/:otp', isAuth, visitorController.getVisitorHappyCode)
 
-router.post("/visitor", isAuth, visitorController.postVisitorController);
+router.post("/visitor", isAuth, imageVisitorUpload("photo"), visitorController.postVisitorController);
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
-router.put("/visitor/update/:id", isAuth, visitorController.putVisitiorController);
+router.put("/visitor/update/:id", isAuth, imageVisitorUpload("photo"), visitorController.putVisitiorController);
 router.get("/visitor/allow/gateIn/:status/:id", isAuth, visitorController.allowGateInFunc);
 
 // ==================== 📊 DASHBOARD ====================

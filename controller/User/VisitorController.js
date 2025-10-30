@@ -119,7 +119,7 @@ exports.getVisitorController = async (req, res, next) => {
 
 exports.getVisitorFilterController = async (req, res, next) => {
     try {
-        
+
         const userId = req.userId;
         const start = req?.params?.start ? new Date(req.params.start) : null;
         const end = req?.params?.end ? new Date(req.params.end) : null;
@@ -276,6 +276,8 @@ exports.postVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
+        const imageUrl = req.file ? req.file.filename : '';
+
         const {
             visitor_name,
             visitor_contact,
@@ -315,6 +317,7 @@ exports.postVisitorController = async (req, res, next) => {
             check_in_to_time: checkin_to_time,
             no_person: no_of_persons,
             vehicle_no: vehicle_number,
+            photo: imageUrl,
             category,
             description,
             otp: generateSixDigitCode(),
@@ -336,6 +339,8 @@ exports.putVisitiorController = async (req, res, next) => {
 
         const id = req.params.id;
         const userId = req.userId;
+
+        const imageUrl = req.file ? req.file.filename : '';
 
         const {
             visitor_name,
@@ -375,6 +380,7 @@ exports.putVisitiorController = async (req, res, next) => {
             check_in_from_time: checkin_from_time,
             check_in_to_time: checkin_to_time,
             no_person: no_of_persons,
+            photo: imageUrl,
             vehicle_no: vehicle_number,
             category,
             description,
