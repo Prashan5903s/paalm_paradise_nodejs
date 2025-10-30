@@ -84,4 +84,6 @@ router.get('/logout/data', isAuth, authController.getLogOutController)
 //This route is for change password
 router.post('/change/password/data', isAuth, authController.changePasswordController)
 
+router.get('/profile/data', isAuth, authController.getUserProfileData)
+
 module.exports = router;

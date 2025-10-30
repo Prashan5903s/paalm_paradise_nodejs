@@ -84,3 +84,21 @@ exports.changePasswordController = async (req, res, next) => {
         next(err)
     }
 };
+
+exports.getUserProfileData = async (req, res, next) => {
+    try {
+
+        const userId = req?.userId;
+
+        const user = await User.findById(userId)
+
+        if (!user) {
+            return errorResponse(res, "User does not exist", {}, 404)
+        }
+
+        return successResponse(res, "User data fetched successfully", user)
+
+    } catch (error) {
+        next(error)
+    }
+}
