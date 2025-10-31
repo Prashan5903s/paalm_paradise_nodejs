@@ -3,6 +3,7 @@ const AppConfig = require('../../model/AppConfig')
 exports.getTermsPolicyController = async (req, res, next) => {
     try {
         const appConfig = new AppConfig({
+            type: "2",
             terms_condition: `
         <h1>Master Service Agreement</h1>
         <p><strong>Between:</strong> Dream Weavers Edutrack Limited & Paalm Paradise</p>
