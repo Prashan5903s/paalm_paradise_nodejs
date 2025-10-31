@@ -15,6 +15,7 @@ const eventController = require("../controller/User/EventController");
 const appConfigController = require('../controller/User/AppConfigAPIController')
 const profileController = require('../controller/User/profileAPIController')
 const authController = require('../controller/User/AuthController')
+const termsPolicyController = require('../controller/User/TermsPolicyController')
 
 const createUpload = require('../util/upload');
 
@@ -84,6 +85,10 @@ router.get('/logout/data', isAuth, authController.getLogOutController)
 //This route is for change password
 router.post('/change/password/data', isAuth, authController.changePasswordController)
 
+//This route is for profile
 router.get('/profile/data', isAuth, authController.getUserProfileData)
+
+//This route is for terms and policy
+router.get("/terms/policy/data", isAuth, termsPolicyController.getTermsPolicyController)
 
 module.exports = router;
