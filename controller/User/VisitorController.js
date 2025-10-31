@@ -147,16 +147,16 @@ exports.getVisitorFilterController = async (req, res, next) => {
 
         // Optional date filters
         if (start && end) {
-            filter.created_at = {
+            filter.check_in_date = {
                 $gte: start,
                 $lte: end
             };
         } else if (start) {
-            filter.created_at = {
+            filter.check_in_date = {
                 $gte: start
             };
         } else if (end) {
-            filter.created_at = {
+            filter.check_in_date = {
                 $lte: end
             };
         }
@@ -174,7 +174,6 @@ exports.getVisitorFilterController = async (req, res, next) => {
                     }
                 ]
             });
-
 
         if (!visitors) {
             return errorResponse(res, "No visitors found", {}, 404);
