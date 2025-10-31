@@ -171,7 +171,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 ]
             });
 
-        if (!visitors || visitors.length === 0) {
+        if (!visitors) {
             return errorResponse(res, "No visitors found", {}, 404);
         }
 
