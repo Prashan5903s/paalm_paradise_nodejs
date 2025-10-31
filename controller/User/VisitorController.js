@@ -115,18 +115,15 @@ exports.getVisitorController = async (req, res, next) => {
     }
 };
 
-
 exports.getVisitorFilterController = async (req, res, next) => {
     try {
-
         const userId = req.userId;
-        const start = req?.params?.start ? new Date(req.params.start) : null;
-        const end = req?.params?.end ? new Date(req.params.end) : null;
+        const start = req?.params?.start || null; // "2025-11-01"
+        const end = req?.params?.end || null; // "2025-11-10"
 
         const roleUser = await RoleUser.find({
             user_id: userId
         });
-
         const hasRole = roleUser.some(r => r.role_id.toString() === "68cd0e38c2d476bd45384234");
 
         const users = await User.findById(userId);
@@ -138,14 +135,13 @@ exports.getVisitorFilterController = async (req, res, next) => {
         });
         const userIds = userData.map(user => user._id.toString());
 
-        // Base filter
+        // ✅ Base filter
         const filter = {};
-
         filter.created_by = hasRole ? {
             $in: userIds
         } : userId;
 
-        // Optional date filters
+        // ✅ Fixed date filter (compare as string, not Date)
         if (start && end) {
             filter.check_in_date = {
                 $gte: start,
@@ -175,7 +171,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 ]
             });
 
-        if (!visitors) {
+        if (!visitors || visitors.length === 0) {
             return errorResponse(res, "No visitors found", {}, 404);
         }
 
@@ -190,7 +186,6 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 status
             } = visitor;
 
-            // If any field missing, skip this visitor
             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
 
             const toFrom24 = convertTo24Hour(check_in_from_time);
@@ -199,10 +194,12 @@ exports.getVisitorFilterController = async (req, res, next) => {
             const toTime24 = convertTo24Hour(check_in_to_time);
             const toDateTime = new Date(`${check_in_date}T${toTime24}:00`);
 
-            let visitorStatus = 1; // default - not started
+            let visitorStatus = 1; // default: not started
 
             if (status === true || status === "true") {
                 visitorStatus = 4; // completed
+            } else if (now >= fromDateTime && now <= toDateTime) {
+                visitorStatus = 2; // active
             } else if (now > toDateTime) {
                 visitorStatus = 3; // expired
             }
@@ -221,21 +218,140 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 },
             });
 
-            // Also update the in-memory object so the response is accurate
             visitor.visitor_status = visitorStatus;
         }
 
-        // Execute all updates together for better performance
         if (bulkUpdates.length > 0) {
             await Visitor.bulkWrite(bulkUpdates);
         }
 
         return successResponse(res, "Visitor fetched successfully", visitors);
-
     } catch (error) {
         next(error);
     }
 };
+
+
+// exports.getVisitorFilterController = async (req, res, next) => {
+//     try {
+
+//         const userId = req.userId;
+//         const start = req?.params?.start ? new Date(req.params.start) : null;
+//         const end = req?.params?.end ? new Date(req.params.end) : null;
+
+//         const roleUser = await RoleUser.find({
+//             user_id: userId
+//         });
+
+//         const hasRole = roleUser.some(r => r.role_id.toString() === "68cd0e38c2d476bd45384234");
+
+//         const users = await User.findById(userId);
+//         const masterId = users?.created_by;
+
+//         // Get all users created by master
+//         const userData = await User.find({
+//             created_by: masterId
+//         });
+//         const userIds = userData.map(user => user._id.toString());
+
+//         // Base filter
+//         const filter = {};
+
+//         filter.created_by = hasRole ? {
+//             $in: userIds
+//         } : userId;
+
+//         // Optional date filters
+//         if (start && end) {
+//             filter.check_in_date = {
+//                 $gte: start,
+//                 $lte: end
+//             };
+//         } else if (start) {
+//             filter.check_in_date = {
+//                 $gte: start
+//             };
+//         } else if (end) {
+//             filter.check_in_date = {
+//                 $lte: end
+//             };
+//         }
+
+//         const visitors = await Visitor.find(filter)
+//             .populate('user_id')
+//             .populate('category')
+//             .populate({
+//                 path: 'apartment_id',
+//                 populate: [{
+//                         path: 'tower_id'
+//                     },
+//                     {
+//                         path: 'floor_id'
+//                     }
+//                 ]
+//             });
+
+//         if (!visitors) {
+//             return errorResponse(res, "No visitors found", {}, 404);
+//         }
+
+//         const now = new Date();
+//         const bulkUpdates = [];
+
+//         for (const visitor of visitors) {
+//             const {
+//                 check_in_date,
+//                 check_in_from_time,
+//                 check_in_to_time,
+//                 status
+//             } = visitor;
+
+//             // If any field missing, skip this visitor
+//             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
+
+//             const toFrom24 = convertTo24Hour(check_in_from_time);
+//             const fromDateTime = new Date(`${check_in_date}T${toFrom24}:00`);
+
+//             const toTime24 = convertTo24Hour(check_in_to_time);
+//             const toDateTime = new Date(`${check_in_date}T${toTime24}:00`);
+
+//             let visitorStatus = 1; // default - not started
+
+//             if (status === true || status === "true") {
+//                 visitorStatus = 4; // completed
+//             } else if (now > toDateTime) {
+//                 visitorStatus = 3; // expired
+//             }
+
+//             // Prepare bulk update
+//             bulkUpdates.push({
+//                 updateOne: {
+//                     filter: {
+//                         _id: visitor._id
+//                     },
+//                     update: {
+//                         $set: {
+//                             visitor_status: visitorStatus
+//                         }
+//                     },
+//                 },
+//             });
+
+//             // Also update the in-memory object so the response is accurate
+//             visitor.visitor_status = visitorStatus;
+//         }
+
+//         // Execute all updates together for better performance
+//         if (bulkUpdates.length > 0) {
+//             await Visitor.bulkWrite(bulkUpdates);
+//         }
+
+//         return successResponse(res, "Visitor fetched successfully", visitors);
+
+//     } catch (error) {
+//         next(error);
+//     }
+// };
 
 exports.createVisitorController = async (req, res, next) => {
     try {
