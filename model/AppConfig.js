@@ -3,8 +3,6 @@ const mongoose = require('mongoose');
 const appConfigSchema = new mongoose.Schema({
     panic_no: {
         type: String,
-        unique: true,
-        required: true,
         maxLength: 100
     },
     type: {
