@@ -81,28 +81,27 @@ exports.getVisitorController = async (req, res, next) => {
 
             let visitorStatus = 1; // default - not started
 
-            if (status === true || status === "true") {
-                visitorStatus = 4; // completed
-            } else if (now > toDateTime) {
+            if (now > toDateTime) {
                 visitorStatus = 3; // expired
+                // Prepare bulk update
+                bulkUpdates.push({
+                    updateOne: {
+                        filter: {
+                            _id: visitor._id
+                        },
+                        update: {
+                            $set: {
+                                visitor_status: visitorStatus
+                            }
+                        },
+                    },
+                });
+
+                // Also update the in-memory object so the response is accurate
+                visitor.visitor_status = visitorStatus;
             }
 
-            // Prepare bulk update
-            bulkUpdates.push({
-                updateOne: {
-                    filter: {
-                        _id: visitor._id
-                    },
-                    update: {
-                        $set: {
-                            visitor_status: visitorStatus
-                        }
-                    },
-                },
-            });
 
-            // Also update the in-memory object so the response is accurate
-            visitor.visitor_status = visitorStatus;
         }
 
         // Execute all updates together for better performance
@@ -403,13 +402,16 @@ exports.allowGateInFunc = async (req, res, next) => {
         if (status == true || status == "true") {
             await Visitor.findByIdAndUpdate(id, {
                 status: true,
-                visitor_status: 4
+                visitor_status: "4"
             })
         } else {
-            await Visitor.findByIdAndUpdate(id, {
-                status: false,
-                visitor_status: 2
+
+            await Visitor.findOneAndUpdate({
+                _id: id
+            }, {
+                visitor_status: "2",
             })
+
         }
 
         return successResponse(res, "Visitor allowed successfully")
