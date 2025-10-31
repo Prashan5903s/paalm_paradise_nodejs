@@ -1,6 +1,9 @@
 const Notice = require('../../model/Notice');
 const Role = require('../../model/Role')
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 exports.getNoticeAPIController = async (req, res, next) => {
     try {
@@ -8,11 +11,13 @@ exports.getNoticeAPIController = async (req, res, next) => {
         const userId = req.userId;
 
         // Assuming you have Notice and Role models
-        const notice = await Notice.find({ created_by: userId })
+        const notice = await Notice.find({
+                created_by: userId
+            })
             .populate({
-                path: 'role_id',        // the field to populate
-                select: '_id name',     // fields you want from Role
-                model: 'roles',          // must match the model name
+                path: 'role_id', // the field to populate
+                select: '_id name', // fields you want from Role
+                model: 'roles', // must match the model name
             });
 
 
@@ -34,8 +39,10 @@ exports.createNoticeAPI = async (req, res, next) => {
         const userId = req.userId;
 
         const role = await Role.find({
-            created_by: { $in: [userId, "68bc14b6b297142d6bfe639c"] }
-        })
+                created_by: {
+                    $in: [userId, "68bc14b6b297142d6bfe639c"]
+                }
+            })
             .select('type name description status permissions created_by')
             .populate('company_id', 'first_name last_name email');
 
@@ -55,11 +62,18 @@ exports.postNoticeController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const { title, description, role_id } = req.body
+        const imageUrl = req.file ? req.file.filename : '';
+
+        const {
+            title,
+            description,
+            role_id
+        } = req.body
 
         const notice = new Notice({
             title,
             description,
+            image_url: imageUrl,
             role_id,
             created_by: userId
         })
@@ -80,10 +94,20 @@ exports.updateNoticeAPIController = async (req, res, next) => {
 
         const id = req.params.id;
 
-        const { title, description, role_id } = req.body
+        const imageUrl = req.file ? req.file.filename : '';
 
-        await Notice.findOneAndUpdate(({ created_by: userId, _id: id }), {
+        const {
             title,
+            description,
+            role_id
+        } = req.body
+
+        await Notice.findOneAndUpdate(({
+            created_by: userId,
+            _id: id
+        }), {
+            title,
+            image_url: imageUrl,
             description,
             role_id
         })

@@ -67,6 +67,8 @@ exports.postEventControllerAPI = async (req, res, next) => {
 
         const userId = req?.userId;
 
+        const imageUrl = req.file ? req.file.filename : '';
+
         const {
             event_name,
             description,
@@ -86,6 +88,7 @@ exports.postEventControllerAPI = async (req, res, next) => {
             description,
             end_on_date,
             end_on_time,
+            image_url: imageUrl,
             role_id,
             user_id,
             start_on_date,
@@ -111,6 +114,8 @@ exports.updateEventControllerAPI = async (req, res, next) => {
 
         const id = req.params.id;
 
+        const imageUrl = req.file ? req.file.filename : '';
+
         const {
             event_name,
             description,
@@ -133,6 +138,7 @@ exports.updateEventControllerAPI = async (req, res, next) => {
             description,
             end_on_date,
             end_on_time,
+            image_url: imageUrl,
             role_id,
             user_id,
             start_on_date,

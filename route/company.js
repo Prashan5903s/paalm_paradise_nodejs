@@ -45,6 +45,20 @@ const {
     'uploads/images' // directory inside /public/
 );
 
+const {
+    middleware: imageNoticeUpload
+} = createUpload(
+    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+    'uploads/notice' // directory inside /public/
+);
+
+const {
+    middleware: imageEventUpload
+} = createUpload(
+    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+    'uploads/event' // directory inside /public/
+);
+
 router.get('/app/menu/label/listing/:sn', isAuth, appMenuController.getAppMenuCompanyListAPI);
 router.post('/app/menu/label/listing/:sn', isAuth, appMenuController.postCompanyMenuListAPI);
 
@@ -99,14 +113,14 @@ router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
 //This route is for notice
 router.get('/notice', isAuth, noticeController.getNoticeAPIController)
 router.get('/notice/create', isAuth, noticeController.createNoticeAPI)
-router.post('/notice', isAuth, noticeController.postNoticeController)
-router.put('/notice/update/:id', isAuth, noticeController.updateNoticeAPIController)
+router.post('/notice', isAuth, imageNoticeUpload("photo"), noticeController.postNoticeController)
+router.put('/notice/update/:id', isAuth, imageNoticeUpload("photo"), noticeController.updateNoticeAPIController)
 
 //This route is for event
 router.get('/event', isAuth, eventController.getEventAPIController)
 router.get('/event/create', isAuth, eventController.createEventController)
-router.post('/event', isAuth, eventController.postEventControllerAPI)
-router.put('/event/update/:id', isAuth, eventController.updateEventControllerAPI)
+router.post('/event', isAuth, imageEventUpload("photo"), eventController.postEventControllerAPI)
+router.put('/event/update/:id', isAuth, imageEventUpload("photo"), eventController.updateEventControllerAPI)
 
 //This route is for maintenance
 router.get("/maintenance-setting", isAuth, maintenanceController.getMaintenanceAPIController)
