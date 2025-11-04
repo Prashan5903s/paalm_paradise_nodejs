@@ -91,6 +91,6 @@ router.get('/profile/data', isAuth, authController.getUserProfileData)
 //This route is for terms and policy
 router.get("/terms/policy/data", isAuth, termsPolicyController.getTermsPolicyController)
 
-router.get('/change/profile/data/:status', isAuth, profileController.postProfileChangeDataController)
+router.post('/change/profile/data/:status', isAuth, profileController.postProfileChangeDataController)
 
 module.exports = router;
