@@ -157,6 +157,30 @@ const userSchema = new Schema({
             required: false,
         }
     }, ],
+    friend_relative_data: {
+        name: {
+            type: String,
+            maxLength: 255,
+            default: null
+        },
+        phone: {
+            type: String,
+            maxLength: 255,
+            default: null
+        }
+    },
+    neighbour_data: {
+        name: {
+            type: String,
+            maxLength: 255,
+            default: null
+        },
+        phone: {
+            type: String,
+            maxLength: 255,
+            default: null
+        }
+    },
     qnap_username: {
         type: String,
         required: false,
