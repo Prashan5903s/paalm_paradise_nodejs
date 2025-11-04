@@ -55,6 +55,8 @@ exports.postAPILogIn = (req, res, next) => {
                 userId: loadedUser._id.toString(),
                 email: decrypt(loadedUser.email),
                 photo: loadedUser.photo,
+                neighbour_data: loadedUser.neighbour_data,
+                friend_data: loadedUser?.friend_relative_data,
                 name: loadedUser.first_name + " " + loadedUser.last_name
             });
         })
