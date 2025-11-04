@@ -50,7 +50,7 @@ exports.postProfileChangeDataController = async (req, res, next) => {
                     phone
                 }
             })
-        } else {
+        } else if(status == "friend")  {
             await User.findByIdAndUpdate(userId, {
                 friend_relative_data: {
                     name,
