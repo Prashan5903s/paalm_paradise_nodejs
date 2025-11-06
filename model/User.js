@@ -48,6 +48,7 @@ const userSchema = new Schema({
     },
     fcm_token: {
         type: String,
+        default: null,
         maxLength: 255
     },
     status: {
