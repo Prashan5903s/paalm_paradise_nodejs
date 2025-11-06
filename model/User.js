@@ -46,6 +46,10 @@ const userSchema = new Schema({
     phone: {
         type: String,
     },
+    fcm_token: {
+        type: String,
+        maxLength: 255
+    },
     status: {
         type: Boolean,
         default: 0,

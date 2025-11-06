@@ -5,15 +5,25 @@ const User = require('../../model/User');
 const jwtSecretKey = process.env.JWT_SECRET;
 const validate = require('../../util/validation')
 const expireTime = process.env.token_expire_time;
-const { hash, normalizeEmail, decrypt } = require('../../util/encryption');
+const {
+    hash,
+    normalizeEmail,
+    decrypt
+} = require('../../util/encryption');
 
 exports.postAPILogIn = (req, res, next) => {
     if (!validate(req, res)) return;
 
-    const { email, password } = req.body;
+    const {
+        email,
+        password,
+        fcm_token
+    } = req.body;
     let loadedUser;
 
-    User.findOne({ email: (normalizeEmail(email)) })
+    User.findOne({
+            email: (normalizeEmail(email))
+        })
         .then(user => {
             if (!user) {
                 const error = new Error("A user with this email cannot be found!");
@@ -40,10 +50,13 @@ exports.postAPILogIn = (req, res, next) => {
             const expiresInSeconds = expireTime * 60 * 60; // convert to seconds
             const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-            const token = jwt.sign(
-                { email: loadedUser.email, userId: loadedUser._id.toString() },
-                jwtSecretKey,
-                { expiresIn: `${expireTime}h` }
+            const token = jwt.sign({
+                    email: loadedUser.email,
+                    userId: loadedUser._id.toString()
+                },
+                jwtSecretKey, {
+                    expiresIn: `${expireTime}h`
+                }
             );
 
             res.status(200).json({
