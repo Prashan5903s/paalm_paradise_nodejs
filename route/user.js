@@ -16,6 +16,7 @@ const appConfigController = require('../controller/User/AppConfigAPIController')
 const profileController = require('../controller/User/profileAPIController')
 const authController = require('../controller/User/AuthController')
 const termsPolicyController = require('../controller/User/TermsPolicyController')
+const panicController = require('../controller/User/PanicAPIController')
 
 const createUpload = require('../util/upload');
 
@@ -92,5 +93,7 @@ router.get('/profile/data', isAuth, authController.getUserProfileData)
 router.get("/terms/policy/data", isAuth, termsPolicyController.getTermsPolicyController)
 
 router.post('/change/profile/data/:status', isAuth, profileController.postProfileChangeDataController)
+
+router.get('/panic/notify/data', isAuth, panicController.getPanicNotify)
 
 module.exports = router;
