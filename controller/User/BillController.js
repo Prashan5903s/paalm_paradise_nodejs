@@ -335,7 +335,7 @@ exports.getMaintenanceBill = async (req, res, next) => {
             created_by: masterId,
         }).select("_id");
 
-        if (!bills.length) {
+        if (!bills) {
             return errorResponse(res, "No maintenance bills found", {}, 404);
         }
 
