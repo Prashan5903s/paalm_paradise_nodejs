@@ -353,7 +353,7 @@ exports.getMaintenanceBill = async (req, res, next) => {
             .populate("user_id")
             .populate("payments");
 
-        if (!userBill?.length) {
+        if (!userBill) {
             return errorResponse(res, "User bill does not exist", {}, 404);
         }
 
