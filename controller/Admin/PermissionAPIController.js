@@ -446,6 +446,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
                     permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(permission[visitor]).includes(gate_allow)
                     permissionsStatus.hasVisitorAddPhoto = normalizeToArray(permission[visitor]).includes(add_photo)
 
+                    
                     permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
                     permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
                     permissionsStatus.hasRoleEditPermission = normalizeToArray(permission[role]).includes(edit)
