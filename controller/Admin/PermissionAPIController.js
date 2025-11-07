@@ -318,6 +318,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
         const complain = '68cd07f2ce94fc785bb5fe8a';
         const floor = '68cd0b3dce94fc785bb63176';
         const camera = '68cd3f185ab9c7e035f4cb04'
+        const announcemnt = "690dd350a5f8abb74adaa259"
+        const event = "690dd35fa5f8abb74adaa280"
 
         let isSuperAdmin = false;
         let isCompany = false;
@@ -337,6 +339,14 @@ exports.getPermAllowAPI = async (req, res, next) => {
             hasApartmentPermission: false,
             hasApartmentAddPermission: false,
             hasApartmentEditPermission: false,
+
+            hasAnnouncementPermission: false,
+            hasAnnouncementAddPermission: false,
+            hasAnnouncementEditPermission: false,
+
+            hasEventPermission: false,
+            hasEventAddPermission: false,
+            hasEventEditPermission: false,
 
             hasUserPermission: false,
             hasUserStatusPermission: false,
@@ -423,6 +433,14 @@ exports.getPermAllowAPI = async (req, res, next) => {
                     permissionsStatus.hasApartmentPermission = normalizeToArray(permission[apartment]).includes(listing);
                     permissionsStatus.hasApartmentAddPermission = normalizeToArray(permission[apartment]).includes(add);
                     permissionsStatus.hasApartmentEditPermission = normalizeToArray(permission[apartment]).includes(edit);
+
+                    permissionsStatus.hasAnnouncementPermission = normalizeToArray(permission[announcemnt]).includes(listing);
+                    permissionsStatus.hasAnnouncementAddPermission = normalizeToArray(permission[announcemnt]).includes(add);
+                    permissionsStatus.hasAnnouncementEditPermission = normalizeToArray(permission[announcemnt]).includes(edit);
+
+                    permissionsStatus.hasEventPermission = normalizeToArray(permission[event]).includes(listing);
+                    permissionsStatus.hasEventAddPermission = normalizeToArray(permission[event]).includes(add);
+                    permissionsStatus.hasEventEditPermission = normalizeToArray(permission[event]).includes(edit);
 
                     permissionsStatus.hasUserPermission = normalizeToArray(permission[users]).includes(listing);
                     permissionsStatus.hasUserAddPermission = normalizeToArray(permission[users]).includes(add)
