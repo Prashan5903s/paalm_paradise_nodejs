@@ -39,6 +39,8 @@ exports.getUserBillController = async (req, res, next) => {
                     }
                 }
             },
+
+            // bring user bills
             {
                 $lookup: {
                     from: "user_bills",
@@ -60,6 +62,7 @@ exports.getUserBillController = async (req, res, next) => {
                     }
                 }
             },
+
             // bring bill details
             {
                 $lookup: {
@@ -104,6 +107,7 @@ exports.getUserBillController = async (req, res, next) => {
                     bill_details: 0
                 }
             },
+
             // bring payments related to user_bills
             {
                 $lookup: {
@@ -150,8 +154,9 @@ exports.getUserBillController = async (req, res, next) => {
             {
                 $project: {
                     payments: 0
-                } // cleanup: remove temp joined array
+                }
             },
+
             // bring assigned user details
             {
                 $lookup: {
@@ -165,6 +170,48 @@ exports.getUserBillController = async (req, res, next) => {
                 $unwind: {
                     path: "$assigned_user",
                     preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // ✅ bring tower details
+            {
+                $lookup: {
+                    from: "towers",
+                    localField: "tower_id",
+                    foreignField: "_id",
+                    as: "tower"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$tower",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // ✅ bring floor details
+            {
+                $lookup: {
+                    from: "floors",
+                    localField: "floor_id",
+                    foreignField: "_id",
+                    as: "floor"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$floor",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // Optional: clean projection
+            {
+                $project: {
+                    "tower.created_by": 0,
+                    "tower.__v": 0,
+                    "floor.created_by": 0,
+                    "floor.__v": 0,
                 }
             }
         ]);
