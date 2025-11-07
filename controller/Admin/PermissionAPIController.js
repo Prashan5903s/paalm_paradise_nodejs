@@ -4,7 +4,10 @@ const user = require('../../model/User')
 const RoleUser = require('../../model/RoleUser')
 const packageType = require('../../model/PackageType')
 const PermissionModule = require('../../model/PermissionModule');
-const { errorResponse, successResponse } = require("../../util/response");
+const {
+    errorResponse,
+    successResponse
+} = require("../../util/response");
 const Role = require('../../model/Role');
 
 exports.getPermission = async (req, res, next) => {
@@ -12,15 +15,21 @@ exports.getPermission = async (req, res, next) => {
 
     try {
         // Get all permission modules including permission and name
-        const allPermissionModules = await PermissionModule.find(
-            {
-                $or: [
-                    { created_by: userId },
-                    { 'permission.0': { $exists: true } }
-                ]
-            },
-            { permission: 1, name: 1, created_by: 1 }
-        ).lean();
+        const allPermissionModules = await PermissionModule.find({
+            $or: [{
+                    created_by: userId
+                },
+                {
+                    'permission.0': {
+                        $exists: true
+                    }
+                }
+            ]
+        }, {
+            permission: 1,
+            name: 1,
+            created_by: 1
+        }).lean();
 
         if (!allPermissionModules || allPermissionModules.length === 0) {
             const error = new Error("Permission modules do not exist!");
@@ -92,7 +101,9 @@ exports.getPermission = async (req, res, next) => {
 exports.createPermission = async (req, res, next) => {
     const userId = req.userId;
 
-    const formData = await PermissionModule.find({ created_by: userId });
+    const formData = await PermissionModule.find({
+        created_by: userId
+    });
 
     if (!formData) {
         const error = new Error("Permission module data does not exist")
@@ -111,12 +122,12 @@ exports.createPermission = async (req, res, next) => {
 
 const slugify = (text) =>
     text
-        .toString()
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9 -]/g, '') // Remove invalid chars
-        .replace(/\s+/g, '-')        // Replace spaces with -
-        .replace(/-+/g, '-');        // Collapse multiple -
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9 -]/g, '') // Remove invalid chars
+    .replace(/\s+/g, '-') // Replace spaces with -
+    .replace(/-+/g, '-'); // Collapse multiple -
 
 exports.editPermission = async (req, res, next) => {
     const permissionId = req.params.permissionId;
@@ -165,7 +176,11 @@ exports.editPermission = async (req, res, next) => {
 exports.postPermission = async (req, res, next) => {
     if (!validation(req, res)) return;
 
-    const { name, status, permissionmodule } = req.body;
+    const {
+        name,
+        status,
+        permissionmodule
+    } = req.body;
     const userId = req.userId;
 
     try {
@@ -222,14 +237,21 @@ exports.postPermission = async (req, res, next) => {
 exports.putPermission = async (req, res, next) => {
     const userId = req.userId;
     const permissionId = req.params.permissionId;
-    const { name, status, permissionmodule } = req.body;
+    const {
+        name,
+        status,
+        permissionmodule
+    } = req.body;
 
     try {
         // Step 1: Remove the permission from all permission modules
-        await PermissionModule.updateMany(
-            {},
-            { $pull: { permission: { _id: permissionId } } }
-        );
+        await PermissionModule.updateMany({}, {
+            $pull: {
+                permission: {
+                    _id: permissionId
+                }
+            }
+        });
 
         // Step 2: Prepare the permission object to insert
         const newPermission = {
@@ -242,10 +264,13 @@ exports.putPermission = async (req, res, next) => {
 
         // Step 3: Add it to the selected permission modules
         const updateOps = permissionmodule.map(moduleId => (
-            PermissionModule.updateOne(
-                { _id: moduleId },
-                { $push: { permission: newPermission } }
-            )
+            PermissionModule.updateOne({
+                _id: moduleId
+            }, {
+                $push: {
+                    permission: newPermission
+                }
+            })
         ));
 
         await Promise.all(updateOps);
@@ -279,6 +304,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
         const add = '68bc227eab2e24f55ea586ef';
         const invoice = '68cd0c5fc2d476bd45382c6a';
         const record_view = "68cd0cecc2d476bd45383621"
+        const add_photo = "690dc3c45d4de8f936ffc615"
+        const gate_allow = "68edf53eed28e2c6b049bafc"
 
         const superAdminId = '68bc14b6b297142d6bfe639c';
         const ticketId = "68d22d6718430e2129859697";
@@ -330,6 +357,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
             hasVisitorPermission: false,
             hasVisitorAddPermission: false,
             hasVisitorEditPermission: false,
+            hasVisitorGateAllowIn: false,
+            hasVisitorAddPhoto: false,
 
             hasRolePermission: false,
             hasRoleAddPermission: false,
@@ -414,6 +443,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
                     permissionsStatus.hasVisitorPermission = normalizeToArray(permission[visitor]).includes(listing)
                     permissionsStatus.hasVisitorAddPermission = normalizeToArray(permission[visitor]).includes(add)
                     permissionsStatus.hasVisitorEditPermission = normalizeToArray(permission[visitor]).includes(edit)
+                    permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(permission[visitor]).includes(gate_allow)
+                    permissionsStatus.hasVisitorAddPhoto = normalizeToArray(permission[visitor]).includes(add_photo)
 
                     permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
                     permissionsStatus.hasRoleAddPermission = normalizeToArray(permission[role]).includes(add)
@@ -423,12 +454,18 @@ exports.getPermAllowAPI = async (req, res, next) => {
 
                 }
             } else {
-                
-                const roles = await RoleUser.find({ user_id: userId }).select("role_id");
+
+                const roles = await RoleUser.find({
+                    user_id: userId
+                }).select("role_id");
 
                 const roleIds = roles.map(r => r.role_id);
 
-                const roleDocs = await Role.find({ _id: { $in: roleIds } }).lean();
+                const roleDocs = await Role.find({
+                    _id: {
+                        $in: roleIds
+                    }
+                }).lean();
 
                 // merged permissions object
                 const mergedPermissions = {};
