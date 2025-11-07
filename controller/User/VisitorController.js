@@ -38,9 +38,28 @@ exports.getVisitorController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const visitors = await Visitor.find({
-                created_by: userId,
-            })
+        const roleUser = await RoleUser.find({
+            user_id: userId
+        });
+
+        const hasRole = roleUser.some(r => r.role_id.toString() === "68cd0e38c2d476bd45384234");
+
+        const users = await User.findById(userId);
+        const masterId = users?.created_by;
+
+        // Get all users created by master
+        const userData = await User.find({
+            created_by: masterId
+        });
+        const userIds = userData.map(user => user._id.toString());
+
+        // ✅ Base filter
+        const filter = {};
+        filter.created_by = hasRole ? {
+            $in: userIds
+        } : userId;
+
+        const visitors = await Visitor.find(filter)
             .populate('user_id')
             .populate('category')
             .populate({
@@ -124,6 +143,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
         const roleUser = await RoleUser.find({
             user_id: userId
         });
+
         const hasRole = roleUser.some(r => r.role_id.toString() === "68cd0e38c2d476bd45384234");
 
         const users = await User.findById(userId);
