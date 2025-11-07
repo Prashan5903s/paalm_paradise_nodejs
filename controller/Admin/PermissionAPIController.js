@@ -520,6 +520,14 @@ exports.getPermAllowAPI = async (req, res, next) => {
                 permissionsStatus.hasApartmentAddPermission = normalizeToArray(finalPermissions[apartment]).includes(add);
                 permissionsStatus.hasApartmentEditPermission = normalizeToArray(finalPermissions[apartment]).includes(edit);
 
+                permissionsStatus.hasAnnouncementPermission = normalizeToArray(finalPermissions[announcemnt]).includes(listing);
+                permissionsStatus.hasAnnouncementAddPermission = normalizeToArray(finalPermissions[announcemnt]).includes(add);
+                permissionsStatus.hasAnnouncementEditPermission = normalizeToArray(finalPermissions[announcemnt]).includes(edit);
+
+                permissionsStatus.hasEventPermission = normalizeToArray(finalPermissions[event]).includes(listing);
+                permissionsStatus.hasEventAddPermission = normalizeToArray(finalPermissions[event]).includes(add);
+                permissionsStatus.hasEventEditPermission = normalizeToArray(finalPermissions[event]).includes(edit);
+
                 permissionsStatus.hasUserPermission = normalizeToArray(finalPermissions[users]).includes(listing);
                 permissionsStatus.hasUserAddPermission = normalizeToArray(finalPermissions[users]).includes(add)
                 permissionsStatus.hasUserEditPermission = normalizeToArray(finalPermissions[users]).includes(edit)
