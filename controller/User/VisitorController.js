@@ -586,7 +586,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
 
         if (!visitor) {
-            return successResponse(res, "Visitor does not exist")
+            return successResponse(res, "Visitor does not exist", {})
         }
 
         const checkDate = visitor?.check_in_date;
@@ -601,7 +601,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
 
         if (now > toDateTime) {
-            return successResponse(res, "Visitor time expired", {}, 500)
+            return successResponse(res, "Visitor time expired", {})
         } else {
             return successResponse(res, "Visitor data fetched successfully", visitor)
         }
