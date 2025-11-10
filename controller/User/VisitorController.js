@@ -402,7 +402,7 @@ exports.createVisitorController = async (req, res, next) => {
                 .select("_id apartment_no tower_id floor_id assigned_to") // ✅ only include needed fields from Apartment
                 .populate({
                     path: "assigned_to",
-                    select: "_id name email" // adjust as needed
+                    select: "_id first_name last_name email" // adjust as needed
                 })
                 .populate({
                     path: "tower_id",
