@@ -586,7 +586,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
 
         if (!visitor) {
-            return errorResponse(res, "Visitor does not exist", {}, 404)
+            return successResponse(res, "Visitor does not exist")
         }
 
         const checkDate = visitor?.check_in_date;
