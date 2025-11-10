@@ -325,6 +325,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
         let isSuperAdmin = false;
         let isCompany = false;
         let isUser = false;
+        let isSecurityGuard = false;
         let notUser = true;
 
         const permissionsStatus = {
@@ -488,6 +489,17 @@ exports.getPermAllowAPI = async (req, res, next) => {
                         $in: roleIds
                     }
                 }).lean();
+
+                const targetRoleId = "68cd0e38c2d476bd45384234";
+
+                const roleExists = await RoleUser.exists({
+                    user_id: userId,
+                    role_id: targetRoleId
+                });
+
+                if (roleExists) {
+                    isSecurityGuard = true;
+                }
 
                 // merged permissions object
                 const mergedPermissions = {};
