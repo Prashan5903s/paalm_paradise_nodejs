@@ -584,6 +584,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
             isCompany,
             isUser,
             notUser,
+            isSecurityGuard,
             ...permissionsStatus
         };
 
