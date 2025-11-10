@@ -537,7 +537,8 @@ exports.allowGateInFunc = async (req, res, next) => {
         if (status == true || status == "true") {
             await Visitor.findByIdAndUpdate(id, {
                 status: true,
-                visitor_status: "4"
+                visitor_status: "4",
+                gate_entry_time: Date.now()
             })
         } else {
 
@@ -545,6 +546,7 @@ exports.allowGateInFunc = async (req, res, next) => {
                 _id: id
             }, {
                 visitor_status: "2",
+                gate_exit_time: Date.now()
             })
 
         }

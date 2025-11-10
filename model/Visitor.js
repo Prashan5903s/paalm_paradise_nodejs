@@ -70,6 +70,16 @@ const visitorSchema = new mongoose.Schema({
         type: String,
         default: "1"
     },
+    gate_entry_time: {
+        type: Date,
+        required: false,
+        default: null
+    },
+    gate_exit_time: {
+        type: Date,
+        required: false,
+        default: null
+    },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
