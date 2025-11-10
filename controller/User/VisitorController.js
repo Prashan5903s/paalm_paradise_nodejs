@@ -383,9 +383,24 @@ exports.createVisitorController = async (req, res, next) => {
         const users = await User.findById(userId)
         const masterId = users.created_by;
 
-        const apartment = await Apartment.find({
-            assigned_to: userId
-        })
+        let apartment = {};
+
+        const targetRoleId = "68cd0e38c2d476bd45384234";
+
+        const roleExists = await RoleUser.exists({
+            user_id: userId,
+            role_id: targetRoleId
+        });
+
+        if (roleExists) {
+            apartment = await Apartment.find({
+                created_by: masterId
+            }).populate("assigned_to")
+        } else {
+            apartment = await Apartment.find({
+                assigned_to: userId
+            })
+        }
 
         const visitorType = await VisitorType.find({
             created_by: masterId
