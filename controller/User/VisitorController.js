@@ -394,8 +394,11 @@ exports.createVisitorController = async (req, res, next) => {
 
         if (roleExists) {
             apartment = await Apartment.find({
-                created_by: masterId
-            }).populate("assigned_to")
+                created_by: masterId,
+                assigned_to: {
+                    $ne: null
+                } // ✅ use $ne instead of ne
+            }).populate("assigned_to");
         } else {
             apartment = await Apartment.find({
                 assigned_to: userId
