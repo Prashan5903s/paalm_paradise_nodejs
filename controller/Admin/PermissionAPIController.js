@@ -369,8 +369,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
             hasVisitorAddPermission: false,
             hasVisitorEditPermission: false,
             hasVisitorGateAllowIn: false,
-            hasVisitorGateEntryPermission: false,
             hasVisitorAddPhoto: false,
+            hasVisitorGateEntryPermission: false,
 
             hasRolePermission: false,
             hasRoleAddPermission: false,
