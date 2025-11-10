@@ -398,7 +398,7 @@ exports.createVisitorController = async (req, res, next) => {
                 assigned_to: {
                     $ne: null
                 } // ✅ use $ne instead of ne
-            }).populate("assigned_to");
+            }).populate("assigned_to").populate("tower_id").populate("floor_id");
         } else {
             apartment = await Apartment.find({
                 assigned_to: userId
