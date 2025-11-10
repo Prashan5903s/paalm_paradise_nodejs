@@ -305,7 +305,8 @@ exports.getPermAllowAPI = async (req, res, next) => {
         const invoice = '68cd0c5fc2d476bd45382c6a';
         const record_view = "68cd0cecc2d476bd45383621"
         const add_photo = "690dc3c45d4de8f936ffc615"
-        const gate_allow = "68edf53eed28e2c6b049bafc"
+        const gate_verify = "68edf53eed28e2c6b049bafc"
+        const gate_entry = "6911854e2def1f7161b6d6f8"
 
         const superAdminId = '68bc14b6b297142d6bfe639c';
         const ticketId = "68d22d6718430e2129859697";
@@ -368,6 +369,7 @@ exports.getPermAllowAPI = async (req, res, next) => {
             hasVisitorAddPermission: false,
             hasVisitorEditPermission: false,
             hasVisitorGateAllowIn: false,
+            hasVisitorGateEntryPermission: false,
             hasVisitorAddPhoto: false,
 
             hasRolePermission: false,
@@ -461,8 +463,9 @@ exports.getPermAllowAPI = async (req, res, next) => {
                     permissionsStatus.hasVisitorPermission = normalizeToArray(permission[visitor]).includes(listing)
                     permissionsStatus.hasVisitorAddPermission = normalizeToArray(permission[visitor]).includes(add)
                     permissionsStatus.hasVisitorEditPermission = normalizeToArray(permission[visitor]).includes(edit)
-                    permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(permission[visitor]).includes(gate_allow)
+                    permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(permission[visitor]).includes(gate_verify)
                     permissionsStatus.hasVisitorAddPhoto = normalizeToArray(permission[visitor]).includes(add_photo)
+                    permissionsStatus.hasVisitorGateEntryPermission = normalizeToArray(permission[visitor]).includes(gate_entry)
 
 
                     permissionsStatus.hasRolePermission = normalizeToArray(permission[role]).includes(listing)
@@ -547,8 +550,9 @@ exports.getPermAllowAPI = async (req, res, next) => {
                 permissionsStatus.hasVisitorPermission = normalizeToArray(finalPermissions[visitor]).includes(listing)
                 permissionsStatus.hasVisitorAddPermission = normalizeToArray(finalPermissions[visitor]).includes(add)
                 permissionsStatus.hasVisitorEditPermission = normalizeToArray(finalPermissions[visitor]).includes(edit)
-                permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(finalPermissions[visitor]).includes(gate_allow)
+                permissionsStatus.hasVisitorGateAllowIn = normalizeToArray(finalPermissions[visitor]).includes(gate_verify)
                 permissionsStatus.hasVisitorAddPhoto = normalizeToArray(finalPermissions[visitor]).includes(add_photo)
+                permissionsStatus.hasVisitorGateEntryPermission = normalizeToArray(finalPermissions[visitor]).includes(gate_entry)
 
                 permissionsStatus.hasRolePermission = normalizeToArray(finalPermissions[role]).includes(listing)
                 permissionsStatus.hasRoleAddPermission = normalizeToArray(finalPermissions[role]).includes(add)
