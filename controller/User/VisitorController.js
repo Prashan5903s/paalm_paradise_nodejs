@@ -719,7 +719,6 @@ exports.getVisitorExitData = async (req, res, next) => {
         // ✅ Build base filter correctly
         const filter = {
             _id: id,
-            visitor_status: "4",
             created_by: hasRole ? {
                 $in: userIds
             } : userId,
@@ -735,7 +734,11 @@ exports.getVisitorExitData = async (req, res, next) => {
         );
 
         if (!updatedVisitor) {
-            return errorResponse(res, "Visitor not found or not authorized", {}, 404);
+            return errorResponse(res, "Visitor does not exist", {}, 404);
+        }
+
+        if (updatedVisitor && updatedVisitor.visitor_status !== "4") {
+            return errorResponse(res, "Visitor has not been checked in yet", {}, 500);
         }
 
         return successResponse(res, "Visitor exited successfully", updatedVisitor);
