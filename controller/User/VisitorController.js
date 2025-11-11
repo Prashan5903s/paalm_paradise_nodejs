@@ -61,8 +61,15 @@ exports.getVisitorController = async (req, res, next) => {
         } : userId;
 
         const visitors = await Visitor.find(filter)
-            .populate('user_id')
-            .populate('category')
+            .populate([{
+                    path: "user_id",
+                    select: "_id first_name last_name email phone"
+                },
+                {
+                    path: "category",
+                    select: "_id name"
+                }
+            ])
             .populate({
                 path: 'apartment_id',
                 populate: [{

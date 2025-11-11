@@ -75,45 +75,107 @@ exports.getDashboardDataAPI = async (req, res, next) => {
         const resolvedComplain = await getComplainsByStatus(userId, "3"); // resolved
 
         const paidCommanAreaBill = await Bill.find({
-            status: true,
-            bill_data_type: "common-area-bill",
-            created_by: masterId
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        });
+                status: true,
+                bill_data_type: "common-area-bill",
+                created_by: masterId
+            })
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate('bill_type')
+            .populate({
+                path: "payments",
+                model: "Payment"
+            });
+
         const unpaidCommanAreaBill = await Bill.find({
-            status: false,
-            bill_data_type: "common-area-bill",
-            created_by: masterId
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        });
+                status: false,
+                bill_data_type: "common-area-bill",
+                created_by: masterId
+            })
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate('bill_type')
+            .populate({
+                path: "payments",
+                model: "Payment"
+            });
 
         const utilityBill = await Bill.find({
-            user_id: userId,
-            bill_data_type: "utilityBills"
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        });
+                user_id: userId,
+                bill_data_type: "utilityBills"
+            }).populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate('bill_type')
+            .populate({
+                path: "payments",
+                model: "Payment"
+            });
+
         const paidUtilityBill = await Bill.find({
-            user_id: userId,
-            status: true,
-            bill_data_type: "utilityBills"
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        });
+                user_id: userId,
+                status: true,
+                bill_data_type: "utilityBills"
+            })
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate('bill_type')
+            .populate({
+                path: "payments",
+                model: "Payment"
+            });
+
         const unpaidUtilityBill = await Bill.find({
-            user_id: userId,
-            status: false,
-            bill_data_type: "utilityBills"
-        }).populate('apartment_id').populate('bill_type').populate({
-            path: "payments",
-            model: "Payment"
-        });
+                user_id: userId,
+                status: false,
+                bill_data_type: "utilityBills"
+            })
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate('bill_type')
+            .populate({
+                path: "payments",
+                model: "Payment"
+            });
 
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
@@ -128,7 +190,10 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     $lte: endOfToday
                 }
             })
-            .populate('user_id')
+            .populate([{
+                path: "user_id",
+                select: "_id first_name last_name email phone"
+            }])
             .populate({
                 path: 'apartment_id',
                 populate: [{
@@ -167,6 +232,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             bill_data_type: "maintenance",
             created_by: masterId
         }).select('_id');
+        
         const billsId = bills.map(b => b._id.toString())
 
         const userBill = await UserBill.find({
@@ -176,8 +242,20 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                 }
             })
             .populate('bill_id')
-            .populate('apartment_id')
-            .populate('user_id')
+            .populate({
+                path: 'apartment_id',
+                populate: [{
+                        path: 'tower_id'
+                    },
+                    {
+                        path: 'floor_id'
+                    }
+                ]
+            })
+            .populate([{
+                path: "user_id",
+                select: "_id first_name last_name email phone"
+            }])
             .populate('payments')
 
         const maintenance = await Maintenance.findOne({
