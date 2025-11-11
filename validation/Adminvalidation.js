@@ -1,7 +1,7 @@
 const { body, check } = require('express-validator');
 
 exports.loginPostValidation = [
-    check('email').isEmail().withMessage("Please enter a valid email").normalizeEmail(),
+    check('email').isEmail().withMessage("Please enter a valid email"),
     body('password').trim().isLength({ min: 6, max: 32 }).withMessage("Password should be min of 6 digit and max 32 digit")
 ];
 

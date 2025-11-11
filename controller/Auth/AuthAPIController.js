@@ -14,7 +14,7 @@ exports.postAPILogIn = async (req, res, next) => {
         const { email, password, fcm_token } = req.body;
 
         // ✅ Ensure email is trimmed & lowercase (case-insensitive login)
-        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedEmail = email;
 
         // ✅ Find user (no decrypt — your DB stores plain emails)
         const user = await User.findOne({ email: normalizedEmail });
