@@ -96,9 +96,13 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .populate('bill_type')
+            .populate({
+                path: 'bill_type',
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "payments",
+                select: "-created_at -created_by",
                 model: "Payment"
             });
 
@@ -124,9 +128,13 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .populate('bill_type')
+            .populate({
+                path: 'bill_type',
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "payments",
+                select: "-created_at -created_by",
                 model: "Payment"
             });
 
@@ -151,9 +159,13 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .populate('bill_type')
+            .populate({
+                path: 'bill_type',
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "payments",
+                select: "-created_at -created_by",
                 model: "Payment"
             });
 
@@ -179,9 +191,13 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .populate('bill_type')
+            .populate({
+                path: 'bill_type',
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "payments",
+                select: "-created_at -created_by",
                 model: "Payment"
             });
 
@@ -207,9 +223,13 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .populate('bill_type')
+            .populate({
+                path: 'bill_type',
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "payments",
+                select: "-created_at -created_by",
                 model: "Payment"
             });
 
@@ -269,7 +289,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     }
                 }
             ]
-        });
+        }).select("-created_at -created_by");
 
         const bills = await Bill.find({
             bill_data_type: "maintenance",
@@ -284,7 +304,10 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                     $in: billsId
                 }
             })
-            .populate('bill_id')
+            .populate({
+                path: "bill_id",
+                select: "-created_at -created_by"
+            })
             .populate({
                 path: "apartment_id",
                 select: "_id apartment_no apartment_type apartment_area",
@@ -306,7 +329,10 @@ exports.getDashboardDataAPI = async (req, res, next) => {
                 path: "user_id",
                 select: "_id first_name last_name email phone"
             }])
-            .populate('payments')
+            .populate({
+                path: "payments",
+                select: "-created_at -created_by"
+            })
 
         const maintenance = await Maintenance.findOne({
             cost_type: "1",

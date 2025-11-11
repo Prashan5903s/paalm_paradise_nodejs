@@ -373,7 +373,6 @@ exports.getMaintenanceBill = async (req, res, next) => {
                 path: "payments",
                 select: "_id amount bill_id user_bill_id bank_name  status  paid_remark neft_no neft_date paid_remark cheque_no  cheque_date demand_draft_no  demand_draft_date  payment_mode  receipt_no" // ✅ user fields
             })
-            .populate("payments");
 
         if (!userBill) {
             return errorResponse(res, "User bill does not exist", {}, 404);
