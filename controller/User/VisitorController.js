@@ -228,11 +228,11 @@ exports.getVisitorFilterController = async (req, res, next) => {
         const bulkUpdates = [];
 
         for (const visitor of visitors) {
+
             const {
                 check_in_date,
                 check_in_from_time,
                 check_in_to_time,
-                status
             } = visitor;
 
             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
@@ -245,11 +245,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
 
             let visitorStatus = 1; // default: not started
 
-            if (status === true || status === "true") {
-                visitorStatus = 4; // completed
-            } else if (now >= fromDateTime && now <= toDateTime) {
-                visitorStatus = 2; // active
-            } else if (now > toDateTime) {
+            if (now > toDateTime) {
                 visitorStatus = 3; // expired
             }
 
