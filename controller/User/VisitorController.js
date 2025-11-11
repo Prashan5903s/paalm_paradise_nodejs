@@ -635,12 +635,12 @@ exports.getVisitorHappyCode = async (req, res, next) => {
             otp: OTP
         })
         .populate("apartment_id")
-        .populate({path: "user_id", populate:})
+        .populate("user_id")
         .populate("category");
 
 
         if (!visitor) {
-            return successResponse(res, "Visitor does not exist", visitor)
+            return successResponse(res, "Visitor does not exist", {})
         }
 
         const checkDate = visitor?.check_in_date;
