@@ -66,7 +66,7 @@ router.get("/visitor/create/data", isAuth, visitorController.createVisitorContro
 router.put("/visitor/update/:id", isAuth, imageVisitorUpload("photo"), visitorController.putVisitiorController);
 router.get("/visitor/allow/gateIn/:status/:id", isAuth, visitorController.allowGateInFunc);
 
-router.get("/my-visitor/user/exit/data/:id", isAuth, visitorController.getVisitorExitData);
+router.get("/my-abc/user/exit/data/:id", isAuth, visitorController.getVisitorExitData);
 
 // ==================== 📊 DASHBOARD ====================
 router.get("/dashboard", isAuth, dashboardController.getDashboardDataAPI);
