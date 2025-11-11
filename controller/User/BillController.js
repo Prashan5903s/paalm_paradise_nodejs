@@ -351,7 +351,6 @@ exports.getMaintenanceBill = async (req, res, next) => {
             .populate("bill_id")
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no tower_id floor_id",
                 populate: [{
                         path: "tower_id",
                         select: "_id name" // ✅ tower fields
