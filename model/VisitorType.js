@@ -6,6 +6,12 @@ const visitorTypeSchema = new mongoose.Schema({
         maxLength: 255,
         required: true
     },
+    icon: {
+        type: String,
+        maxLength: 25,
+        default: null,
+        required: false
+    },
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
         required: true
