@@ -478,6 +478,7 @@ exports.postVisitorController = async (req, res, next) => {
             const apartments = await Apartment.findOne({
                 assigned_to: userId
             })
+
             if (!apartments) {
                 return errorResponse(res, "User has no apartment assigned", {}, 500)
             } else {
@@ -632,11 +633,14 @@ exports.getVisitorHappyCode = async (req, res, next) => {
                 $in: userIds
             },
             otp: OTP
-        }).populate("apartment_id").populate("user_id").populate("category");
+        })
+        .populate("apartment_id")
+        .populate({path: "user_id", populate:})
+        .populate("category");
 
 
         if (!visitor) {
-            return successResponse(res, "Visitor does not exist", {})
+            return successResponse(res, "Visitor does not exist", visitor)
         }
 
         const checkDate = visitor?.check_in_date;
