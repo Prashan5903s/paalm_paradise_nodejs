@@ -16,6 +16,7 @@ exports.postAPILogIn = async (req, res, next) => {
 
         // ✅ Normalize email and find user
         const user = await User.findOne({ email: (email) });
+        
         if (!user) {
             const error = new Error("A user with this email cannot be found!");
             error.statusCode = 401;
