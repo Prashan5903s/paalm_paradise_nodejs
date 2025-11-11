@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Visitor = require('../../model/Visitor');
 const Apartment = require('../../model/Apartment')
 const User = require('../../model/User')
@@ -690,6 +691,11 @@ exports.getVisitorExitData = async (req, res, next) => {
         const userId = req?.userId;
         const id = req?.params?.id;
 
+        // ✅ Validate ID format
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return errorResponse(res, "Invalid visitor ID", {}, 400);
+        }
+
         // Find roles for current user
         const roleUser = await RoleUser.find({
             user_id: userId
@@ -710,7 +716,7 @@ exports.getVisitorExitData = async (req, res, next) => {
         });
         const userIds = userData.map((u) => u._id.toString());
 
-        // ✅ Build base filter
+        // ✅ Build base filter correctly
         const filter = {
             _id: id,
             created_by: hasRole ? {
@@ -718,13 +724,13 @@ exports.getVisitorExitData = async (req, res, next) => {
             } : userId,
         };
 
-        // ✅ Update visitor record
+        // ✅ Update visitor record safely
         const updatedVisitor = await Visitor.findOneAndUpdate(
             filter, {
                 gate_exit_time: Date.now()
             }, {
                 new: true
-            } // return updated document (optional)
+            }
         );
 
         if (!updatedVisitor) {
@@ -733,7 +739,7 @@ exports.getVisitorExitData = async (req, res, next) => {
 
         return successResponse(res, "Visitor exited successfully", updatedVisitor);
     } catch (error) {
-        
+
         next(error);
     }
 };
