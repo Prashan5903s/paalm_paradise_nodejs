@@ -542,7 +542,9 @@ exports.putVisitiorController = async (req, res, next) => {
             const apartments = await Apartment.findOne({
                 assigned_to: userId
             })
-            apartmentId = apartments._id
+            if (apartments) {
+                apartmentId = apartments._id
+            }
 
         } else {
             apartmentId = apartment_id;
