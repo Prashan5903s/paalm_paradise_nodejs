@@ -595,7 +595,7 @@ exports.allowGateInFunc = async (req, res, next) => {
                 _id: id
             }, {
                 visitor_status: "2",
-                gate_exit_time: Date.now()
+                gate_rejected_time: Date.now()
             })
 
         }
@@ -684,3 +684,56 @@ exports.getVisitorHappyCode = async (req, res, next) => {
         next(error)
     }
 }
+
+exports.getVisitorExitData = async (req, res, next) => {
+    try {
+        const userId = req?.userId;
+        const id = req?.params?.id;
+
+        // Find roles for current user
+        const roleUser = await RoleUser.find({
+            user_id: userId
+        });
+
+        // Check if user has the specific role
+        const hasRole = roleUser.some(
+            (r) => r.role_id.toString() === "68cd0e38c2d476bd45384234"
+        );
+
+        // Find the user and its creator (master)
+        const user = await User.findById(userId);
+        const masterId = user?.created_by;
+
+        // Get all users created by the master
+        const userData = await User.find({
+            created_by: masterId
+        });
+        const userIds = userData.map((u) => u._id.toString());
+
+        // ✅ Build base filter
+        const filter = {
+            _id: id,
+            created_by: hasRole ? {
+                $in: userIds
+            } : userId,
+        };
+
+        // ✅ Update visitor record
+        const updatedVisitor = await Visitor.findOneAndUpdate(
+            filter, {
+                gate_exit_time: Date.now()
+            }, {
+                new: true
+            } // return updated document (optional)
+        );
+
+        if (!updatedVisitor) {
+            return errorResponse(res, "Visitor not found or not authorized", {}, 404);
+        }
+
+        return successResponse(res, "Visitor exited successfully", updatedVisitor);
+    } catch (error) {
+        
+        next(error);
+    }
+};

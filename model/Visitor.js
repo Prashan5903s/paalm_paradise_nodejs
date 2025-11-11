@@ -75,6 +75,11 @@ const visitorSchema = new mongoose.Schema({
         required: false,
         default: null
     },
+    gate_rejected_time: {
+        type: Date,
+        required: false,
+        default: null
+    },
     gate_exit_time: {
         type: Date,
         required: false,
