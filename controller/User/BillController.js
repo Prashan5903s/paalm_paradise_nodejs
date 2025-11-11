@@ -348,7 +348,10 @@ exports.getMaintenanceBill = async (req, res, next) => {
                     $in: billIds
                 },
             })
-            .populate("bill_id")
+            .populate({
+                path: "bill_id",
+                select: "-created_at -created_by" // exclude these two fields
+            })
             .populate({
                 path: "apartment_id",
                 select: "_id apartment_no apartment_area  apartment_type status tower_id floor_id",
@@ -365,6 +368,10 @@ exports.getMaintenanceBill = async (req, res, next) => {
             .populate({
                 path: "user_id",
                 select: "_id first_name last_name email phone" // ✅ user fields
+            })
+            .populate({
+                path: "payments",
+                select: "_id amount bill_id user_bill_id bank_name  status  paid_remark neft_no neft_date paid_remark cheque_no  cheque_date demand_draft_no  demand_draft_date  payment_mode  receipt_no" // ✅ user fields
             })
             .populate("payments");
 
