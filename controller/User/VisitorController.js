@@ -719,6 +719,7 @@ exports.getVisitorExitData = async (req, res, next) => {
         // ✅ Build base filter correctly
         const filter = {
             _id: id,
+            visitor_status: "4",
             created_by: hasRole ? {
                 $in: userIds
             } : userId,
