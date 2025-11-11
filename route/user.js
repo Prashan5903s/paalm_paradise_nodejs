@@ -57,7 +57,7 @@ router.post("/complain/data/resolve", isAuth, complainResolvedController.postCom
 // ==================== 🚪 VISITOR ROUTES ====================
 router.get("/visitor", isAuth, visitorController.getVisitorController);
 
-router.get("/visitor/data/exit/:id", isAuth, visitorController.getVisitorExitData);
+router.get("/visitor/datass/exit/:id", isAuth, visitorController.getVisitorExitData);
 
 router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilterController);
 
