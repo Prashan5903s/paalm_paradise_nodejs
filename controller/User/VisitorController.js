@@ -651,7 +651,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
 
 
         if (now > toDateTime) {
-            return successResponse(res, "Visitor time expired", {})
+            return successResponse(res, "Visitor time expired", visitor)
         } else {
             return successResponse(res, "Visitor data fetched successfully", visitor)
         }
