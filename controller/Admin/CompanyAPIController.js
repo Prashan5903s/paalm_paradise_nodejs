@@ -36,7 +36,7 @@ exports.getCompanyIndexAPI = async (req, res, next) => {
                     select: "_id name" // ✅ only _id and name in roles
                 }
             })
-            .select("_id first_name last_name email address company_name phone apartment_data status")
+            .select("_id first_name last_name email address photo company_name phone apartment_data status")
             .exec();
 
         const role = await Role.find({
