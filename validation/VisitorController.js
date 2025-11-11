@@ -24,12 +24,12 @@ exports.postCompany = [
 ];
 
 exports.postVisitor = [
-    body('phone')
-    .notEmpty().withMessage("Phone number is required")
+    body('visitor_contact')
+    .notEmpty().withMessage("Visitor number is required")
     .isLength({
         min: 10,
         max: 15
-    }).withMessage("Phone number must be between 10 and 15 digits")
-    .matches(/^[0-9]+$/).withMessage("Phone number must contain only numbers")
+    }).withMessage("Visitor number must be between 10 and 15 digits")
+    .matches(/^[0-9]+$/).withMessage("Visitor number must contain only numbers")
     .trim(),
 ];

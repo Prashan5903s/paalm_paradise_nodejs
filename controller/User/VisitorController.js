@@ -233,6 +233,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
                 check_in_date,
                 check_in_from_time,
                 check_in_to_time,
+                visitor_status
             } = visitor;
 
             if (!check_in_date || !check_in_from_time || !check_in_to_time) continue;
@@ -247,6 +248,8 @@ exports.getVisitorFilterController = async (req, res, next) => {
 
             if (now > toDateTime) {
                 visitorStatus = 3; // expired
+            } else if (visitor_status != "1") {
+                visitorStatus = visitor_status;
             }
 
             // Prepare bulk update
