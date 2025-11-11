@@ -57,8 +57,6 @@ router.post("/complain/data/resolve", isAuth, complainResolvedController.postCom
 // ==================== 🚪 VISITOR ROUTES ====================
 router.get("/visitor", isAuth, visitorController.getVisitorController);
 
-router.put("/my-visitor/user/exit/data/:id", isAuth, visitorController.getVisitorExitData);
-
 router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilterController);
 
 router.get('/visitor/otp/code/:otp', isAuth, visitorController.getVisitorHappyCode)
@@ -67,6 +65,8 @@ router.post("/visitor", isAuth, imageVisitorUpload("photo"), visitorController.p
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
 router.put("/visitor/update/:id", isAuth, imageVisitorUpload("photo"), visitorController.putVisitiorController);
 router.get("/visitor/allow/gateIn/:status/:id", isAuth, visitorController.allowGateInFunc);
+
+router.get("/my-visitor/user/exit/data/:id", isAuth, visitorController.getVisitorExitData);
 
 // ==================== 📊 DASHBOARD ====================
 router.get("/dashboard", isAuth, dashboardController.getDashboardDataAPI);
