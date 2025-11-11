@@ -201,7 +201,6 @@ exports.getDashboardDataAPI = async (req, res, next) => {
         }
 
         const finalData = {
-            camera,
             fixedCost,
             userBill,
             visitor,
