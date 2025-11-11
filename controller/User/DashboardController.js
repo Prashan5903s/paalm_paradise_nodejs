@@ -286,12 +286,19 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate('bill_id')
             .populate({
-                path: 'apartment_id',
+                path: "apartment_id",
+                select: "_id apartment_no apartment_area",
                 populate: [{
-                        path: 'tower_id'
+                        path: "tower_id",
+                        select: "_id name"
                     },
                     {
-                        path: 'floor_id'
+                        path: "floor_id",
+                        select: "_id floor_name"
+                    },
+                    {
+                        path: "assigned_to",
+                        select: "_id first_name last_name"
                     }
                 ]
             })
