@@ -18,6 +18,8 @@ const authController = require('../controller/User/AuthController')
 const termsPolicyController = require('../controller/User/TermsPolicyController')
 const panicController = require('../controller/User/PanicAPIController')
 
+const visitorValidation = require('../validation/VisitorController');
+
 const createUpload = require('../util/upload');
 
 const {
@@ -61,9 +63,9 @@ router.get("/user-visitor/:start/:end", isAuth, visitorController.getVisitorFilt
 
 router.get('/visitor/otp/code/:otp', isAuth, visitorController.getVisitorHappyCode)
 
-router.post("/visitor", isAuth, imageVisitorUpload("photo"), visitorController.postVisitorController);
+router.post("/visitor", isAuth, visitorValidation.postVisitor, imageVisitorUpload("photo"), visitorController.postVisitorController);
 router.get("/visitor/create/data", isAuth, visitorController.createVisitorController);
-router.put("/visitor/update/:id", isAuth, imageVisitorUpload("photo"), visitorController.putVisitiorController);
+router.put("/visitor/update/:id", isAuth, visitorValidation.postVisitor, imageVisitorUpload("photo"), visitorController.putVisitiorController);
 router.get("/visitor/allow/gateIn/:status/:id", isAuth, visitorController.allowGateInFunc);
 
 router.get("/visitor/user/exit/data/:id", isAuth, visitorController.getVisitorExitData);

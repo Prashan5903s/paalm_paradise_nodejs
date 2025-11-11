@@ -1,6 +1,7 @@
 const User = require('../../model/User');
 const Country = require('../../model/Country');
 const PackageType = require('../../model/PackageType');
+const Role = require("../../model/Role");
 // const Maintenance = require('../../model/Maintenance')
 const bcrypt = require('bcryptjs')
 
@@ -26,15 +27,33 @@ exports.getCompanyIndexAPI = async (req, res, next) => {
                     }
                 ]
             })
-            .select("first_name last_name email phone apartment_data status")
+            .populate({
+                path: "roles", // virtual from userSchema
+                select: "_id role_id", // ✅ show only _id and role_id in role_user
+                populate: {
+                    path: "role_id",
+                    model: "roles",
+                    select: "_id name" // ✅ only _id and name in roles
+                }
+            })
+            .select("_id first_name last_name email address company_name phone apartment_data status")
             .exec();
+
+        const role = await Role.find({
+                created_by: {
+                    $in: [userId, "68bc14b6b297142d6bfe639c"]
+                }
+            })
+            .select('type name description status permissions created_by')
+            .populate('company_id', 'first_name last_name email');
 
         res.status(200).json({
             status: "Success",
             statusCode: 200,
             message: "Data successfully fetched!",
             data: {
-                users
+                users,
+                role
             },
         });
     } catch (error) {
