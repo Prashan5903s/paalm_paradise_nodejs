@@ -24,6 +24,7 @@ const visitorSchema = new mongoose.Schema({
     },
     otp: {
         type: Number,
+        unique: true,
         required: true,
         maxLength: 6,
         minLength: 6

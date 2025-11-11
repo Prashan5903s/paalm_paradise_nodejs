@@ -151,14 +151,17 @@ const userSchema = new Schema({
     apartment_data: [{
         tower_id: {
             type: mongoose.Schema.Types.ObjectId,
+            ref: "towers",
             required: false,
         },
         floor_id: {
             type: mongoose.Schema.Types.ObjectId,
+            ref: "floors",
             required: false,
         },
         apartment_id: {
             type: mongoose.Schema.Types.ObjectId,
+            ref: "apartments",
             required: false,
         }
     }, ],

@@ -5,25 +5,49 @@ const PackageType = require('../../model/PackageType');
 const bcrypt = require('bcryptjs')
 
 exports.getCompanyIndexAPI = async (req, res, next) => {
+    try {
+        const userId = req.userId;
 
-    const userId = req.userId;
-    const company = await User.find({
-        created_by: userId,
-        user_type: {
-            $ne: "4"
-        }
-    });
+        const users = await User.find({
+                created_by: userId,
+                user_type: {
+                    $ne: "4"
+                } // Exclude tenants
+            })
+            .populate({
+                path: "apartment_data.apartment_id",
+                populate: [{
+                        path: "floor_id",
+                        model: "floors"
+                    },
+                    {
+                        path: "tower_id",
+                        model: "towers"
+                    }
+                ]
+            })
+            .select("first_name last_name email phone apartment_data status")
+            .exec();
 
+        res.status(200).json({
+            status: "Success",
+            statusCode: 200,
+            message: "Data successfully fetched!",
+            data: {
+                users
+            },
+        });
+    } catch (error) {
+        console.error("Error fetching company users:", error);
+        res.status(500).json({
+            status: "Error",
+            statusCode: 500,
+            message: "Internal server error.",
+            error: error.message,
+        });
+    }
+};
 
-    res.status(200).json({
-        'status': 'Success',
-        'statusCode': 200,
-        'message': 'Data successfully fetched!',
-        data: {
-            company,
-        }
-    });
-}
 
 exports.createCompanyAPI = async (req, res, next) => {
 
