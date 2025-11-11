@@ -629,14 +629,33 @@ exports.getVisitorHappyCode = async (req, res, next) => {
         const userIds = users.map(user => user._id);
 
         const visitor = await Visitor.findOne({
-            created_by: {
-                $in: userIds
-            },
-            otp: OTP
-        })
-        .populate("apartment_id")
-        .populate("user_id")
-        .populate("category");
+                created_by: {
+                    $in: userIds
+                },
+                otp: OTP
+            })
+            .select("_id check_in_date check_in_from_time check_in_to_time no_person vehicle_no photo description visitor_status status otp visitor_name visitor_contact_no apartment_id category user_id") // only fetch needed fields
+            .populate({
+                path: "apartment_id",
+                select: "_id apartment_no tower_id floor_id",
+                populate: [{
+                        path: "tower_id",
+                        select: "_id name" // ✅ tower fields
+                    },
+                    {
+                        path: "floor_id",
+                        select: "_id floor_name" // ✅ floor fields
+                    }
+                ]
+            })
+            .populate({
+                path: "user_id",
+                select: "_id first_name last_name email phone" // ✅ user fields
+            })
+            .populate({
+                path: "category",
+                select: "_id name" // ✅ category fields
+            });
 
 
         if (!visitor) {
