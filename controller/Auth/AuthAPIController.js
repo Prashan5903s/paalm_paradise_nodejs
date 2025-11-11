@@ -5,18 +5,28 @@ const User = require('../../model/User');
 const jwtSecretKey = process.env.JWT_SECRET;
 const validate = require('../../util/validation');
 const expireTime = process.env.token_expire_time;
-const { hash, normalizeEmail, decrypt } = require('../../util/encryption');
+const {
+    hash,
+    normalizeEmail,
+    decrypt
+} = require('../../util/encryption');
 
 exports.postAPILogIn = async (req, res, next) => {
     try {
         // ✅ Validate input first
         if (!validate(req, res)) return;
 
-        const { email, password, fcm_token } = req.body;
+        const {
+            email,
+            password,
+            fcm_token
+        } = req.body;
 
         // ✅ Normalize email and find user
-        const user = await User.findOne({ email: (email) });
-        
+        const user = await User.findOne({
+            email: decrypt(email)
+        });
+
         if (!user) {
             const error = new Error("A user with this email cannot be found!");
             error.statusCode = 401;
@@ -47,13 +57,13 @@ exports.postAPILogIn = async (req, res, next) => {
         const expiresInSeconds = expireTime * 60 * 60; // convert hours to seconds
         const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-        const token = jwt.sign(
-            {
+        const token = jwt.sign({
                 email: user.email,
                 userId: user._id.toString(),
             },
-            jwtSecretKey,
-            { expiresIn: `${expireTime}h` }
+            jwtSecretKey, {
+                expiresIn: `${expireTime}h`
+            }
         );
 
         // ✅ Send response
@@ -64,7 +74,7 @@ exports.postAPILogIn = async (req, res, next) => {
             token: token,
             expiresAt: expirationTimestamp,
             userId: user._id.toString(),
-            email: decrypt(user.email),
+            email: (user.email),
             photo: user.photo,
             neighbour_data: user.neighbour_data,
             friend_data: user?.friend_relative_data,
