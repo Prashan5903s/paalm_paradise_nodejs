@@ -81,7 +81,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -109,7 +109,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -136,7 +136,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -164,7 +164,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -192,7 +192,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             })
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -232,7 +232,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             }])
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
@@ -287,7 +287,7 @@ exports.getDashboardDataAPI = async (req, res, next) => {
             .populate('bill_id')
             .populate({
                 path: "apartment_id",
-                select: "_id apartment_no apartment_area",
+                select: "_id apartment_no apartment_type apartment_area",
                 populate: [{
                         path: "tower_id",
                         select: "_id name"
