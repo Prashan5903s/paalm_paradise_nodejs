@@ -174,14 +174,8 @@ exports.getMyComplainFilterController = async (req, res, next) => {
                 }
             },
             {
-                // ✅ Final projection
                 $project: {
-                    complain_users: 0, // hide the full complain_users array
-                    created_at: 0, // remove created_at
-                    created_by: 0, // remove created_by
-                    "category.created_at": 0, // remove created_at inside category
-                    "category.created_by": 0, // remove created_by inside category
-                    "category.otherField": 0, // optional — if you only want _id and name
+                    complain_users: 0 // hide the full complain_users array
                 }
             }
         ]);
