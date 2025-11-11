@@ -349,27 +349,9 @@ exports.getMaintenanceBill = async (req, res, next) => {
                 },
             })
             .populate("bill_id")
-            .populate({
-                path: "apartment_id",
-                select: "_id apartment_no tower_id floor_id",
-                populate: [{
-                        path: "tower_id",
-                        select: "_id name" // ✅ tower fields
-                    },
-                    {
-                        path: "floor_id",
-                        select: "_id floor_name" // ✅ floor fields
-                    }
-                ]
-            })
-            .populate({
-                path: "user_id",
-                select: "_id first_name last_name email phone" // ✅ user fields
-            })
-            .populate({
-                path: "payments",
-                select: "_id amount bank_name status paid_remark neft_no neft_date cheque_no cheque_date demand_draft_no demand_draft_date  payment_mode receipt_no" // ✅ user fields
-            })
+            .populate("apartment_id")
+            .populate("user_id")
+            .populate("payments");
 
         if (!userBill) {
             return errorResponse(res, "User bill does not exist", {}, 404);
