@@ -100,7 +100,7 @@ exports.getVisitorController = async (req, res, next) => {
                 check_in_date,
                 check_in_from_time,
                 check_in_to_time,
-                status
+                visitor_status
             } = visitor;
 
             // If any field missing, skip this visitor
@@ -115,25 +115,27 @@ exports.getVisitorController = async (req, res, next) => {
 
             let visitorStatus = 1; // default - not started
 
-            if (now > toDateTime) {
+            if (now > toDateTime && visitor_status == "1") {
                 visitorStatus = 3; // expired
-                // Prepare bulk update
-                bulkUpdates.push({
-                    updateOne: {
-                        filter: {
-                            _id: visitor._id
-                        },
-                        update: {
-                            $set: {
-                                visitor_status: visitorStatus
-                            }
-                        },
-                    },
-                });
-
-                // Also update the in-memory object so the response is accurate
-                visitor.visitor_status = visitorStatus;
+            } else if (visitor_status != "1") {
+                visitorStatus = visitor_status;
             }
+
+            bulkUpdates.push({
+                updateOne: {
+                    filter: {
+                        _id: visitor._id
+                    },
+                    update: {
+                        $set: {
+                            visitor_status: visitorStatus
+                        }
+                    },
+                },
+            });
+
+            // Also update the in-memory object so the response is accurate
+            visitor.visitor_status = visitorStatus;
 
 
         }
@@ -246,7 +248,7 @@ exports.getVisitorFilterController = async (req, res, next) => {
 
             let visitorStatus = 1; // default: not started
 
-            if (now > toDateTime) {
+            if (now > toDateTime && visitor_status == "1") {
                 visitorStatus = 3; // expired
             } else if (visitor_status != "1") {
                 visitorStatus = visitor_status;
@@ -740,7 +742,8 @@ exports.getVisitorExitData = async (req, res, next) => {
         // ✅ Update visitor record safely
         const updatedVisitor = await Visitor.findOneAndUpdate(
             filter, {
-                gate_exit_time: Date.now()
+                gate_exit_time: Date.now(),
+                visitor_status: "5"
             }, {
                 new: true
             }
