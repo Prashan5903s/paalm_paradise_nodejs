@@ -650,7 +650,7 @@ exports.getVisitorHappyCode = async (req, res, next) => {
                 },
                 otp: OTP
             })
-            .select("_id check_in_date check_in_from_time check_in_to_time no_person vehicle_no photo description visitor_status status otp visitor_name visitor_contact_no apartment_id category user_id") // only fetch needed fields
+            .select("_id check_in_date check_in_from_time check_in_to_time no_person vehicle_no photo description visitor_status status otp visitor_name visitor_contact_no gate_entry_time gate_rejected_time gate_exit_time apartment_id category user_id") // only fetch needed fields
             .populate({
                 path: "apartment_id",
                 select: "_id apartment_no tower_id floor_id",
