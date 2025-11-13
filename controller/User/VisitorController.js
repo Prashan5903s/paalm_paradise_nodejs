@@ -711,33 +711,44 @@ exports.getVisitorExitData = async (req, res, next) => {
             return errorResponse(res, "Invalid visitor ID", {}, 400);
         }
 
-        // Find roles for current user
+        // ✅ Find roles for current user
         const roleUser = await RoleUser.find({
             user_id: userId
         });
 
-        // Check if user has the specific role
+        // ✅ Check if user has the specific role
         const hasRole = roleUser.some(
             (r) => r.role_id.toString() === "68cd0e38c2d476bd45384234"
         );
 
-        // Find the user and its creator (master)
+        // ✅ Find user and master
         const user = await User.findById(userId);
         const masterId = user?.created_by;
 
-        // Get all users created by the master
+        // ✅ Get all users created by the master (if applicable)
         const userData = await User.find({
             created_by: masterId
         });
         const userIds = userData.map((u) => u._id.toString());
 
-        // ✅ Build base filter correctly
+        // ✅ Build filter correctly
         const filter = {
             _id: id,
             created_by: hasRole ? {
                 $in: userIds
             } : userId,
         };
+
+        // ✅ Check if visitor exists and status is valid
+        const visitor = await Visitor.findOne(filter);
+
+        if (!visitor) {
+            return errorResponse(res, "Visitor does not exist", {}, 404);
+        }
+
+        if (visitor.visitor_status !== "4") {
+            return errorResponse(res, "Visitor has not been checked in yet", {}, 400);
+        }
 
         // ✅ Update visitor record safely
         const updatedVisitor = await Visitor.findOneAndUpdate(
@@ -746,20 +757,11 @@ exports.getVisitorExitData = async (req, res, next) => {
                 visitor_status: "5"
             }, {
                 new: true
-            }
+            } // return updated doc
         );
-
-        if (!updatedVisitor) {
-            return errorResponse(res, "Visitor does not exist", {}, 404);
-        }
-
-        if (updatedVisitor && updatedVisitor.visitor_status !== "4") {
-            return errorResponse(res, "Visitor has not been checked in yet", {}, 500);
-        }
 
         return successResponse(res, "Visitor exited successfully", updatedVisitor);
     } catch (error) {
-
         next(error);
     }
 };
