@@ -5,18 +5,20 @@ const User = require('../../model/User');
 const jwtSecretKey = process.env.JWT_SECRET;
 const validate = require('../../util/validation');
 const expireTime = process.env.token_expire_time;
+const PermissionUtil = require("../../util/perArr");
+const { errorResponse } = require('../../util/response');
 
 exports.postAPILogIn = async (req, res, next) => {
     try {
-        // ✅ Validate request body
+        //  Validate request body
         if (!validate(req, res)) return;
 
-        const { email, password, fcm_token } = req.body;
+        const { email, password, fcm_token, isNotMobile = false } = req.body;
 
-        // ✅ Ensure email is trimmed & lowercase (case-insensitive login)
+        //  Ensure email is trimmed & lowercase (case-insensitive login)
         const normalizedEmail = email;
 
-        // ✅ Find user (no decrypt — your DB stores plain emails)
+        //  Find user (no decrypt — your DB stores plain emails)
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
@@ -27,7 +29,7 @@ exports.postAPILogIn = async (req, res, next) => {
             });
         }
 
-        // ✅ Check account status
+        //  Check account status
         if (!user.status) {
             return res.status(400).json({
                 status: "Failure",
@@ -36,9 +38,11 @@ exports.postAPILogIn = async (req, res, next) => {
             });
         }
 
-        // ✅ Compare password
+        //  Compare password
         const isEqual = await bcrypt.compare(password, user.password);
+
         if (!isEqual) {
+
             return res.status(401).json({
                 status: "Failure",
                 statusCode: 401,
@@ -46,13 +50,28 @@ exports.postAPILogIn = async (req, res, next) => {
             });
         }
 
-        // ✅ Update FCM token (optional)
+
+        if (!isNotMobile) {
+
+            const perms_arr = await PermissionUtil(user._id)
+
+            const finalPer = perms_arr?.data;
+
+            if (finalPer?.["notUser"]) {
+
+                return errorResponse(res, "Only user allowed", {}, 404)
+            }
+
+        }
+
+
+        // Update FCM token (optional)
         if (fcm_token && fcm_token.trim() !== "") {
             user.fcm_token = fcm_token.trim();
             await user.save().catch(err => console.error("⚠️ FCM token update failed:", err));
         }
 
-        // ✅ Generate JWT token
+        //  Generate JWT token
         const expiresInSeconds = expireTime * 60 * 60; // convert hours → seconds
         const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
@@ -65,7 +84,7 @@ exports.postAPILogIn = async (req, res, next) => {
             { expiresIn: `${expireTime}h` }
         );
 
-        // ✅ Success response
+        //  Success response
         return res.status(200).json({
             status: "Success",
             statusCode: 200,
@@ -81,7 +100,7 @@ exports.postAPILogIn = async (req, res, next) => {
         });
 
     } catch (err) {
-        
+
         console.error("❌ Login error:", err);
 
         return res.status(500).json({
