@@ -120,6 +120,8 @@ exports.postAPILogIn = async (req, res, next) => {
             expiresAt: expirationTimestamp,
             userId: user._id.toString(),
             email: user.email,
+            no_of_members: user.no_of_members || 0,
+            vehicle_data: user.vehicle_data || [],
             apartment_data: formatted || [],
             photo: user.photo || "",
             no_of_pets: user?.no_of_pets || 0,
