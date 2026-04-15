@@ -16,6 +16,8 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     "assigned_to.user": mongoose.Types.ObjectId.createFromHexString(userId)
                 }
             },
+
+            // 🔹 Created By User
             {
                 $lookup: {
                     from: "users",
@@ -24,6 +26,8 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     as: "created_by_user"
                 }
             },
+
+            // 🔹 Latest complain_user
             {
                 $lookup: {
                     from: "complain_users",
@@ -41,7 +45,7 @@ exports.getComplainResolvedController = async (req, res, next) => {
                             $sort: {
                                 created_at: -1
                             }
-                        }, // latest first
+                        },
                         {
                             $limit: 1
                         }
@@ -49,6 +53,8 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     as: "latest_complain_user"
                 }
             },
+
+            // 🔹 Category
             {
                 $lookup: {
                     from: "ticket_types",
@@ -57,6 +63,8 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     as: "category"
                 }
             },
+
+            // 🔹 Unwinds
             {
                 $unwind: {
                     path: "$category",
@@ -75,6 +83,89 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     preserveNullAndEmptyArrays: true
                 }
             },
+
+            // 🔥 🔥 🔥 HANDLE ARRAY apartment_data
+            {
+                $unwind: {
+                    path: "$created_by_user.apartment_data",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // 🔹 Direct lookup Apartment
+            {
+                $lookup: {
+                    from: "apartments",
+                    localField: "created_by_user.apartment_data.apartment_id",
+                    foreignField: "_id",
+                    as: "created_by_user.apartment_data.apartment_id"
+                }
+            },
+
+            // 🔹 Direct lookup Tower
+            {
+                $lookup: {
+                    from: "towers",
+                    localField: "created_by_user.apartment_data.tower_id",
+                    foreignField: "_id",
+                    as: "created_by_user.apartment_data.tower_id"
+                }
+            },
+
+            // 🔹 Direct lookup Floor
+            {
+                $lookup: {
+                    from: "floors",
+                    localField: "created_by_user.apartment_data.floor_id",
+                    foreignField: "_id",
+                    as: "created_by_user.apartment_data.floor_id"
+                }
+            },
+
+            // 🔹 Unwind all
+            {
+                $unwind: {
+                    path: "$created_by_user.apartment_data.apartment_id",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$created_by_user.apartment_data.tower_id",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$created_by_user.apartment_data.floor_id",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+
+            // 🔹 Group back to array
+            {
+                $group: {
+                    _id: "$_id",
+                    doc: {
+                        $first: "$$ROOT"
+                    },
+                    apartment_data: {
+                        $push: "$created_by_user.apartment_data"
+                    }
+                }
+            },
+            {
+                $addFields: {
+                    "doc.created_by_user.apartment_data": "$apartment_data"
+                }
+            },
+            {
+                $replaceRoot: {
+                    newRoot: "$doc"
+                }
+            },
+
+            // 🔹 Filter status
             {
                 $match: {
                     "latest_complain_user.complaint_status": {
@@ -82,13 +173,14 @@ exports.getComplainResolvedController = async (req, res, next) => {
                     }
                 }
             },
+
+            // 🔹 Final cleanup
             {
                 $project: {
                     happy_code: 0
                 }
             }
         ]);
-
 
         if (!complains) {
             return errorResponse(res, "Complain does not exist", {}, 404)

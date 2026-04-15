@@ -204,6 +204,11 @@ const userSchema = new Schema({
         required: false,
         maxlength: 255,
     },
+    no_of_members: {
+        type: String,
+        required: false,
+        maxlength: 255,
+    },
     vehicle_data: [{
         vehicle_number: {
             type: String,

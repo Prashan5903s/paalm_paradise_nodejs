@@ -18,7 +18,7 @@ exports.getMyComplainController = async (req, res, next) => {
 
         const complains = await Complain.aggregate([{
                 $match: {
-                    created_by: new mongoose.Types.ObjectId(userId)
+                    created_by: mongoose.Types.ObjectId.createFromHexString(userId)
                 }
             },
             {
@@ -58,6 +58,36 @@ exports.getMyComplainController = async (req, res, next) => {
                     localField: "category",
                     foreignField: "_id",
                     as: "category"
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    let: {
+                        userIds: "$assigned_to.user"
+                    },
+                    pipeline: [{
+                            $match: {
+                                $expr: {
+                                    $eq: ["$_id", "$$userIds"]
+                                }
+                            }
+                        },
+                        {
+                            $project: {
+                                _id: 1,
+                                first_name: 1,
+                                last_name: 1
+                            }
+                        }
+                    ],
+                    as: "assigned_user"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$assigned_user",
+                    preserveNullAndEmptyArrays: true
                 }
             },
             {

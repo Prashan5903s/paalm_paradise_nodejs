@@ -28,7 +28,19 @@ exports.postAPILogIn = async (req, res, next) => {
         //  Find user (no decrypt — your DB stores plain emails)
         const user = await User.findOne({
             email: normalizedEmail
-        });
+        }).populate([{
+                path: "apartment_data.apartment_id",
+                select: "apartment_no"
+            },
+            {
+                path: "apartment_data.floor_id",
+                select: "floor_name"
+            },
+            {
+                path: "apartment_data.tower_id",
+                select: "name"
+            }
+        ]);
 
         if (!user) {
             return res.status(401).json({
@@ -80,6 +92,12 @@ exports.postAPILogIn = async (req, res, next) => {
             await user.save().catch(err => console.error("⚠️ FCM token update failed:", err));
         }
 
+        const formatted = user?.apartment_data?.map(item => ({
+            apartment_no: item.apartment_id?.apartment_no || null,
+            floor_name: item.floor_id?.floor_name || null,
+            tower_name: item.tower_id?.name || null,
+        }));
+
         //  Generate JWT token
         const expiresInSeconds = expireTime * 60 * 60; // convert hours → seconds
         const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
@@ -102,6 +120,7 @@ exports.postAPILogIn = async (req, res, next) => {
             expiresAt: expirationTimestamp,
             userId: user._id.toString(),
             email: user.email,
+            apartment_data: formatted || [],
             photo: user.photo || "",
             no_of_pets: user?.no_of_pets || 0,
             vehicle_count: user?.vehicle_data?.length || 0,
