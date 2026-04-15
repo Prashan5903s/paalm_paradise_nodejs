@@ -1,38 +1,86 @@
 const mongoose = require('mongoose')
 const Complain = require('../../model/Complain');
 const ComplainUser = require('../../model/ComplainUser')
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 
 exports.getComplainResolvedController = async (req, res, next) => {
     try {
 
         const userId = req.userId;
 
-        const complains = await Complain.aggregate([
+        const complains = await Complain.aggregate([{
+                $match: {
+                    "assigned_to.user": mongoose.Types.ObjectId.createFromHexString(userId)
+                }
+            },
             {
-                $match: { "assigned_to.user": new mongoose.Types.ObjectId(userId) }
+                $lookup: {
+                    from: "users",
+                    localField: "created_by",
+                    foreignField: "_id",
+                    as: "created_by_user"
+                }
             },
             {
                 $lookup: {
                     from: "complain_users",
-                    let: { complainId: "$_id" },
-                    pipeline: [
-                        {
+                    let: {
+                        complainId: "$_id"
+                    },
+                    pipeline: [{
                             $match: {
-                                $expr: { $eq: ["$complain_id", "$$complainId"] }
+                                $expr: {
+                                    $eq: ["$complain_id", "$$complainId"]
+                                }
                             }
                         },
-                        { $sort: { created_at: -1 } }, // latest first
-                        { $limit: 1 }
+                        {
+                            $sort: {
+                                created_at: -1
+                            }
+                        }, // latest first
+                        {
+                            $limit: 1
+                        }
                     ],
                     as: "latest_complain_user"
                 }
             },
             {
-                $unwind: { path: "$latest_complain_user", preserveNullAndEmptyArrays: true }
+                $lookup: {
+                    from: "ticket_types",
+                    localField: "category",
+                    foreignField: "_id",
+                    as: "category"
+                }
             },
             {
-                $match: { "latest_complain_user.complaint_status": { $ne: "3" } }
+                $unwind: {
+                    path: "$category",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$created_by_user",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $unwind: {
+                    path: "$latest_complain_user",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $match: {
+                    "latest_complain_user.complaint_status": {
+                        $ne: "3"
+                    }
+                }
             },
             {
                 $project: {
@@ -58,7 +106,12 @@ exports.postCompanyResolvedController = async (req, res, next) => {
 
         const userId = req.userId;
 
-        const { status, remark, happy_code, complain_id } = req.body;
+        const {
+            status,
+            remark,
+            happy_code,
+            complain_id
+        } = req.body;
 
         const complain = await Complain.findById(complain_id)
 

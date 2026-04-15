@@ -199,6 +199,23 @@ const userSchema = new Schema({
         required: false,
         maxlength: 255,
     },
+    no_of_pets: {
+        type: String,
+        required: false,
+        maxlength: 255,
+    },
+    vehicle_data: [{
+        vehicle_number: {
+            type: String,
+            required: false,
+            maxlength: 255,
+        },
+        vehicle_name: {
+            type: String,
+            required: false,
+            maxlength: 255,
+        }
+    }],
     sip_extension: {
         type: String,
         required: false,
@@ -246,7 +263,7 @@ const userSchema = new Schema({
     },
 });
 
-// ✅ Virtual for employee ID
+//  Virtual for employee ID
 userSchema.virtual("emp_id").get(function () {
     const activeCodeObj = (this.codes || []).find(
         (code) => code.type === "active"
@@ -254,7 +271,7 @@ userSchema.virtual("emp_id").get(function () {
     return activeCodeObj?.code || null;
 });
 
-// ✅ Virtual population for roles
+//  Virtual population for roles
 userSchema.virtual("roles", {
     ref: "role_user",
     localField: "_id",
@@ -262,7 +279,7 @@ userSchema.virtual("roles", {
     justOne: false,
 });
 
-// ✅ Enable virtuals in JSON / Object
+//  Enable virtuals in JSON / Object
 userSchema.set("toJSON", {
     virtuals: true,
     getters: true,

@@ -6,20 +6,29 @@ const jwtSecretKey = process.env.JWT_SECRET;
 const validate = require('../../util/validation');
 const expireTime = process.env.token_expire_time;
 const PermissionUtil = require("../../util/perArr");
-const { errorResponse } = require('../../util/response');
+const {
+    errorResponse
+} = require('../../util/response');
 
 exports.postAPILogIn = async (req, res, next) => {
     try {
         //  Validate request body
         if (!validate(req, res)) return;
 
-        const { email, password, fcm_token, isNotMobile = false } = req.body;
+        const {
+            email,
+            password,
+            fcm_token,
+            isNotMobile = false
+        } = req.body;
 
         //  Ensure email is trimmed & lowercase (case-insensitive login)
         const normalizedEmail = email;
 
         //  Find user (no decrypt — your DB stores plain emails)
-        const user = await User.findOne({ email: normalizedEmail });
+        const user = await User.findOne({
+            email: normalizedEmail
+        });
 
         if (!user) {
             return res.status(401).json({
@@ -57,7 +66,7 @@ exports.postAPILogIn = async (req, res, next) => {
 
             const finalPer = perms_arr?.data;
 
-            if (finalPer?.["notUser"]) {
+            if (finalPer?. ["notUser"]) {
 
                 return errorResponse(res, "Only user allowed", {}, 404)
             }
@@ -75,13 +84,13 @@ exports.postAPILogIn = async (req, res, next) => {
         const expiresInSeconds = expireTime * 60 * 60; // convert hours → seconds
         const expirationTimestamp = Math.floor(Date.now() / 1000) + expiresInSeconds;
 
-        const token = jwt.sign(
-            {
+        const token = jwt.sign({
                 email: user.email,
                 userId: user._id.toString(),
             },
-            jwtSecretKey,
-            { expiresIn: `${expireTime}h` }
+            jwtSecretKey, {
+                expiresIn: `${expireTime}h`
+            }
         );
 
         //  Success response
@@ -94,6 +103,8 @@ exports.postAPILogIn = async (req, res, next) => {
             userId: user._id.toString(),
             email: user.email,
             photo: user.photo || "",
+            no_of_pets: user?.no_of_pets || 0,
+            vehicle_count: user?.vehicle_data?.length || 0,
             neighbour_data: user.neighbour_data || [],
             friend_data: user.friend_relative_data || [],
             name: `${user.first_name || ""} ${user.last_name || ""}`.trim(),

@@ -33,7 +33,7 @@ exports.getNotificationDataAPI = async (req, res, next) => {
         const Notifications = await notification.aggregate([
             {
                 $match: {
-                    created_by: new mongoose.Types.ObjectId(userId)
+                    created_by:  mongoose.Types.ObjectId.createFromHexString(userId)
                 }
             },
             {
@@ -224,7 +224,7 @@ exports.getFormNotificationAPI = async (req, res, next) => {
         const Notification = await notification.aggregate([
             {
                 $match: {
-                    notification_type: new mongoose.Types.ObjectId(typeId)
+                    notification_type:  mongoose.Types.ObjectId.createFromHexString(typeId)
                 }
             },
             {

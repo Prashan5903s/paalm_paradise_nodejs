@@ -245,7 +245,7 @@ exports.createUserAPI = async (req, res, next) => {
         const allowedFields = [
             'first_name', 'first_name_search', 'last_name', 'email', 'country_id', 'state_id',
             'city_id', 'address', 'status', 'phone', 'dob', 'website', 'floor_id', 'apartment_id',
-            'pincode', 'designation_id', 'urn_no', 'idfa_code', 'department_id', 'cameras',
+            'pincode', 'designation_id', 'urn_no', 'idfa_code', 'department_id', 'cameras', 'no_of_pets', 'vehicle_data',
             'qnap_username', 'qnap_password', 'sip_extension', 'user_type', 'apartment_data',
             'application_no', 'licence_no', 'tower_id', 'employee_type', 'participation_type_id',
             'user_code'
@@ -504,7 +504,7 @@ exports.updateUserAPI = async (req, res, next) => {
             "first_name", "first_name_search", "last_name", "email", "country_id", "state_id",
             "city_id", "address", "status", "phone", "dob", "website", "floor_id", "apartment_id",
             "pincode", "designation_id", "urn_no", "idfa_code", "department_id", "cameras",
-            "qnap_username", "qnap_password", "sip_extension", "apartment_data",
+            "qnap_username", "qnap_password", "sip_extension", "apartment_data", 'no_of_pets', 'vehicle_data',
             "application_no", "licence_no", "tower_id", "employee_type", "participation_type_id",
             "user_code"
         ];
