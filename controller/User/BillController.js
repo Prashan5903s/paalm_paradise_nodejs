@@ -27,6 +27,7 @@ exports.getBillController = async (req, res, next) => {
         const masterId = user?.created_by;
 
         if (type === "common-area-bill") {
+
             const bills = await Bill.find({
                     status: statusField,
                     bill_data_type: type,
@@ -53,6 +54,7 @@ exports.getBillController = async (req, res, next) => {
             };
 
         } else if (type === "maintenance") {
+
             let datas = {};
 
             const bills = await Bill.find({
@@ -95,6 +97,7 @@ exports.getBillController = async (req, res, next) => {
             datas["fixed_cost"] = fixedCost;
 
             data = datas;
+
         } else {
 
             const bills = await Bill.find({
@@ -102,7 +105,22 @@ exports.getBillController = async (req, res, next) => {
                     status: statusField,
                     bill_data_type: type,
                 })
-                .populate("apartment_id")
+                .populate({
+                    path: 'apartment_id',
+                    select: 'apartment_no tower_id floor_id apartment_area assigned_to',
+                    populate: [{
+                            path: 'assigned_to'
+                        },
+                        {
+                            path: 'tower_id',
+                            select: 'name'
+                        }, // Tower fields
+                        {
+                            path: 'floor_id',
+                            select: 'floor_name'
+                        } // Floor fields
+                    ]
+                })
                 .populate("bill_type")
                 .populate({
                     path: "payments",
