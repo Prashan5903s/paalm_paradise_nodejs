@@ -152,7 +152,9 @@ exports.getAlertController = async (req, res, next) => {
 
     // const finalEmail = [...matchEmails, masterUser.email]
 
-    const finalEmail = ["prashant@dreamweaversindia.com"]
+    const finalEmail = ['prashant@dreamweaversindia.com']
+
+    console.log('Final Email List:', finalEmail)
 
     await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
       .then(info => {
