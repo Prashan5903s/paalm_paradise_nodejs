@@ -150,21 +150,17 @@ exports.getAlertController = async (req, res, next) => {
 
     const matchEmails = users.map(user => user.email)
 
-    // const finalEmail = [...matchEmails, masterUser.email]
+    const finalEmail = [...matchEmails, masterUser.email]
 
-    const finalEmail = ['prashant@dreamweaversindia.com']
+    // await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
+    //   .then(info => {
+    //     console.log('Mail sent:', info.messageId)
+    //   })
+    //   .catch(err => {
+    //     console.error('Error sending mail:', err)
+    //   })
 
-    console.log('Final Email List:', finalEmail)
-
-    await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
-      .then(info => {
-        console.log('Mail sent:', info.messageId)
-      })
-      .catch(err => {
-        console.error('Error sending mail:', err)
-      })
-
-    return successResponse(res, 'Alert sent successfully')
+    return successResponse(res, 'Alert sent successfully', finalEmail)
   } catch (error) {
     next(error)
   }
