@@ -152,13 +152,13 @@ exports.getAlertController = async (req, res, next) => {
 
     const finalEmail = [...matchEmails, masterUser.email]
 
-    // await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
-    //   .then(info => {
-    //     console.log('Mail sent:', info.messageId)
-    //   })
-    //   .catch(err => {
-    //     console.error('Error sending mail:', err)
-    //   })
+    await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
+      .then(info => {
+        console.log('Mail sent:', info.messageId)
+      })
+      .catch(err => {
+        console.error('Error sending mail:', err)
+      })
 
     return successResponse(res, 'Alert sent successfully', finalEmail)
   } catch (error) {
