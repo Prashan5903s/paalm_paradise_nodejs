@@ -1,5 +1,9 @@
 const admin = require('firebase-admin')
 
+console.log(admin)
+console.log('credential:', admin.credential)
+process.exit()
+
 const serviceAccount = {
   type: process.env.FIREBASE_TYPE,
   project_id: process.env.FIREBASE_PROJECT_ID,
