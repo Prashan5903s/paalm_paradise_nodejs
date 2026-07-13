@@ -1,10 +1,7 @@
 const { initializeApp, cert, getApps } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
 
-console.log('TYPE:', process.env.FIREBASE_TYPE)
-console.log('EMAIL:', process.env.FIREBASE_CLIENT_EMAIL)
-console.log('PRIVATE KEY:')
-console.log(process.env.FIREBASE_PRIVATE_KEY)
+require('dotenv').config()
 
 const serviceAccount = {
   type: process.env.FIREBASE_TYPE,
