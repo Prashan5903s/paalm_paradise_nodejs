@@ -17,6 +17,8 @@ const serviceAccount = {
   universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
 }
 
+console.log(serviceAccount.private_key)
+
 if (!getApps().length) {
   initializeApp({
     credential: cert(serviceAccount)
