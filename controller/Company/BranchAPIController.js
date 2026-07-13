@@ -1,12 +1,19 @@
 const zone = require('../../model/Zone');
-const { errorResponse, successResponse } = require('../../util/response');
+const {
+    errorResponse,
+    successResponse
+} = require('../../util/response');
 const mongoose = require('mongoose');
-const { Types } = mongoose;
+const {
+    Types
+} = mongoose;
 
 exports.getBranchAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
-        const Zone = await zone.find({ created_by: userId });
+        const Zone = await zone.find({
+            created_by: userId
+        });
 
         if (!Zone) {
             return errorResponse(res, "Zone does not exist", {}, 404)
@@ -16,7 +23,10 @@ exports.getBranchAPI = async (req, res, next) => {
         Zone.forEach(item => {
             item.region.forEach(data => {
                 data.branch.forEach(val => {
-                    allBranch.push({ data: val, regionId: data._id });
+                    allBranch.push({
+                        data: val,
+                        regionId: data._id
+                    });
                 })
             })
         })
@@ -32,7 +42,9 @@ exports.postRegionBranchAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
         const regionId = req.params.regionId;
-        const { branch } = req.body;
+        const {
+            branch
+        } = req.body;
 
         if (!branch || (Array.isArray(branch) && branch.length === 0)) {
             return errorResponse(res, "No branch data provided", {}, 400);
@@ -68,8 +80,8 @@ exports.postRegionBranchAPI = async (req, res, next) => {
         // Prepare a map of incoming branches by ID (if present)
         const incomingBranchIdSet = new Set(
             incomingBranches
-                .filter(b => b.branchId)
-                .map(b => b.branchId.toString())
+            .filter(b => b.branchId)
+            .map(b => b.branchId.toString())
         );
 
         // Update or add incoming branches
@@ -114,7 +126,11 @@ exports.postBranchAPI = async (req, res, next) => {
     try {
         const userId = req.userId;
 
-        const { name, code, regionId } = req.body;
+        const {
+            name,
+            code,
+            regionId
+        } = req.body;
 
         const Zone = await zone.findOne({
             region: {
@@ -161,16 +177,23 @@ exports.putBranchUpdateAPI = async (req, res, next) => {
         const userId = req.userId;
         const branchId = req.params.branchId;
 
-        const objectIdBranchId = mongoose.Types.ObjectId.isValid(branchId)
-            ? new mongoose.Types.ObjectId(branchId)
-            : branchId;
+        const objectIdBranchId = mongoose.Types.ObjectId.isValid(branchId) ?
+            mongoose.Types.ObjectId.createFromHexString(branchId) :
+            branchId;
 
-        const { name, code, regionId } = req.body;
+        const {
+            name,
+            code,
+            regionId
+        } = req.body;
 
         // Step 1: Find the branch via aggregation
-        const result = await zone.aggregate([
-            { $unwind: "$region" },
-            { $unwind: "$region.branch" },
+        const result = await zone.aggregate([{
+                $unwind: "$region"
+            },
+            {
+                $unwind: "$region.branch"
+            },
             {
                 $match: {
                     "region.branch._id": objectIdBranchId
@@ -186,7 +209,10 @@ exports.putBranchUpdateAPI = async (req, res, next) => {
         ]);
 
         if (result.length === 0) {
-            return res.status(404).json({ status: "Failure", message: "Branch not found" });
+            return res.status(404).json({
+                status: "Failure",
+                message: "Branch not found"
+            });
         }
 
         const foundData = result[0];
@@ -194,24 +220,23 @@ exports.putBranchUpdateAPI = async (req, res, next) => {
 
         if (foundRegionId === regionId.toString().trim()) {
 
-            await zone.updateOne(
-                {
-                    "region._id": new mongoose.Types.ObjectId(regionId),
-                    "region.branch._id": objectIdBranchId
-                },
-                {
-                    $set: {
-                        "region.$[regionElem].branch.$[branchElem].name": name,
-                        "region.$[regionElem].branch.$[branchElem].code": code
-                    }
-                },
-                {
-                    arrayFilters: [
-                        { "regionElem._id": new mongoose.Types.ObjectId(regionId) },
-                        { "branchElem._id": objectIdBranchId }
-                    ]
+            await zone.updateOne({
+                "region._id":  mongoose.Types.ObjectId.createFromHexString(regionId),
+                "region.branch._id": objectIdBranchId
+            }, {
+                $set: {
+                    "region.$[regionElem].branch.$[branchElem].name": name,
+                    "region.$[regionElem].branch.$[branchElem].code": code
                 }
-            );
+            }, {
+                arrayFilters: [{
+                        "regionElem._id":  mongoose.Types.ObjectId.createFromHexString(regionId)
+                    },
+                    {
+                        "branchElem._id": objectIdBranchId
+                    }
+                ]
+            });
         } else {
 
             const updatedBranch = {
@@ -221,28 +246,24 @@ exports.putBranchUpdateAPI = async (req, res, next) => {
             };
 
             // Remove from old region
-            await zone.updateOne(
-                {
-                    "region._id": new mongoose.Types.ObjectId(foundRegionId)
-                },
-                {
-                    $pull: {
-                        "region.$.branch": { _id: objectIdBranchId }
+            await zone.updateOne({
+                "region._id":  mongoose.Types.ObjectId.createFromHexString(foundRegionId)
+            }, {
+                $pull: {
+                    "region.$.branch": {
+                        _id: objectIdBranchId
                     }
                 }
-            );
+            });
 
             // Add to new region
-            await zone.updateOne(
-                {
-                    "region._id": new mongoose.Types.ObjectId(regionId)
-                },
-                {
-                    $push: {
-                        "region.$.branch": updatedBranch
-                    }
+            await zone.updateOne({
+                "region._id":  mongoose.Types.ObjectId.createFromHexString(regionId)
+            }, {
+                $push: {
+                    "region.$.branch": updatedBranch
                 }
-            );
+            });
         }
 
         return successResponse(res, "Branch updated successfully")
@@ -257,15 +278,17 @@ exports.postBranchUniqueCheck = async (req, res, next) => {
         const userId = req.userId;
         const datas = req.body;
 
-        const Zone = await zone.findOne({ created_by: userId });
+        const Zone = await zone.findOne({
+            created_by: userId
+        });
 
         let allBranch = [];
 
         if (Zone?.region?.length) {
             allBranch = Zone.region.flatMap(region =>
-                Array.isArray(region.branch)
-                    ? region.branch.map(branch => branch)
-                    : []
+                Array.isArray(region.branch) ?
+                region.branch.map(branch => branch) :
+                []
             );
         }
 
@@ -310,5 +333,3 @@ exports.postBranchUniqueCheck = async (req, res, next) => {
         next(error);
     }
 };
-
-

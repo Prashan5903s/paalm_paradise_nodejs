@@ -18,6 +18,8 @@ const authController = require('../controller/User/AuthController')
 const termsPolicyController = require('../controller/User/TermsPolicyController')
 const panicController = require('../controller/User/PanicAPIController')
 
+const alertController = require("../controller/User/AlertAPIController")
+
 const visitorValidation = require('../validation/VisitorController');
 
 const createUpload = require('../util/upload');
@@ -101,4 +103,11 @@ router.post('/change/profile/data/:status', isAuth, profileController.postProfil
 
 router.get('/panic/notify/data', isAuth, panicController.getPanicNotify)
 
-module.exports = router;
+//This route is to send alert to security guard
+router.get(
+  '/send/security-guard/alert',
+  isAuth,
+  alertController.getAlertController
+)
+
+module.exports = router
