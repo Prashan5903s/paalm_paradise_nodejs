@@ -3,6 +3,8 @@ const User = require('../../model/User')
 const SendUserMail = require('../../util/sendMail')
 const AppConfig = require('../../model/AppConfig')
 const { successResponse } = require('../../util/response')
+const { fireBase } = require('../../util/firebase')
+const { sendNotification } = require('../../util/sendPushNotification')
 
 exports.getAlertController = async (req, res, next) => {
   try {
@@ -151,6 +153,33 @@ exports.getAlertController = async (req, res, next) => {
     const matchEmails = users.map(user => user.email)
 
     const finalEmail = [...matchEmails, masterUser.email]
+
+    const matchIds = users.map(user => user._id)
+    const finalMatchId = [...matchIds, masterUser._id]
+
+    const notificationUsers = [...users, masterUser]
+
+    await Promise.all(
+      notificationUsers.map(async user => {
+        if (!user.fcm_token) return
+
+        try {
+          await sendNotification(
+            user.fcm_token,
+            'Emergency Alert',
+            `${ownerName} has triggered a panic alert.`,
+            'panic_alert',
+            String(userId),
+            'high'
+          )
+        } catch (err) {
+          console.error(
+            `Failed to send notification to ${user.email}:`,
+            err.message
+          )
+        }
+      })
+    )
 
     await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
       .then(info => {
