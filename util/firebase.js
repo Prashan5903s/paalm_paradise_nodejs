@@ -1,6 +1,5 @@
 const { initializeApp, cert, getApps } = require('firebase-admin/app')
 const { getMessaging } = require('firebase-admin/messaging')
-
 require('dotenv').config()
 
 const serviceAccount = {
@@ -17,12 +16,14 @@ const serviceAccount = {
   universe_domain: process.env.FIREBASE_UNIVERSE_DOMAIN
 }
 
-console.log(serviceAccount.private_key)
-
 if (!getApps().length) {
   initializeApp({
     credential: cert(serviceAccount)
   })
+
+  console.log('✅ Firebase initialized successfully')
 }
 
-module.exports = { getMessaging }
+module.exports = {
+  getMessaging
+}
