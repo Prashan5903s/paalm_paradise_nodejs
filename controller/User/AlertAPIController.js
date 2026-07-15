@@ -240,12 +240,12 @@ exports.getAlertController = async (req, res, next) => {
     )
 
     try {
-      // const info = await SendUserMail(
-      //   finalEmails,
-      //   mailSubject,
-      //   finalMailBody,
-      //   userId
-      // )
+      const info = await SendUserMail(
+        finalEmails,
+        mailSubject,
+        finalMailBody,
+        userId
+      )
 
       console.log('✅ Mail sent:', info?.messageId || info)
     } catch (mailError) {
