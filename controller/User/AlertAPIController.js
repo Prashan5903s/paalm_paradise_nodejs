@@ -5,6 +5,7 @@ const AppConfig = require('../../model/AppConfig')
 const { successResponse } = require('../../util/response')
 const { fireBase } = require('../../util/firebase')
 const { sendNotification } = require('../../util/sendPushNotification')
+const UserPushNotification = require('../../model/UserPushNotify')
 
 exports.getAlertController = async (req, res, next) => {
   try {
@@ -172,6 +173,19 @@ exports.getAlertController = async (req, res, next) => {
             String(userId),
             'high'
           )
+
+          const user_notfiy = new UserPushNotification({
+            title: 'Emergency Alert',
+            description: `${ownerName} has triggered a panic alert.`,
+            screen: 'panic_alert',
+            created_by: userId,
+            user_id: user._id,
+            fcm_token: user.fcm_token,
+            priority: 'high',
+            created_at: Date.now()
+          })
+
+          await user_notfiy.save()
         } catch (err) {
           console.error(
             `Failed to send notification to ${user.email}:`,
