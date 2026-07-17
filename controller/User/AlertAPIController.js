@@ -163,11 +163,13 @@ exports.getAlertController = async (req, res, next) => {
       notificationUsers.map(async user => {
         if (!user.fcm_token) return
 
+        const phoneNumber = user?.phone
+
         try {
           await sendNotification(
             user.fcm_token,
             'Emergency Alert',
-            `${ownerName} has triggered a panic alert.`,
+            `${ownerName} has triggered a panic alert. Contact: ${phoneNumber}.`,
             'panic_alert',
             String(userId),
             'high'
