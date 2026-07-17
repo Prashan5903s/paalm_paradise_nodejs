@@ -1,21 +1,24 @@
 const mongoose = require('mongoose')
+
 const User = require('../../model/User')
-const SendUserMail = require('../../util/sendMail')
 const AppConfig = require('../../model/AppConfig')
+const UserPushNotification = require('../../model/UserPushNotify')
+
+const SendUserMail = require('../../util/sendMail')
 const { successResponse } = require('../../util/response')
-const { fireBase } = require('../../util/firebase')
 const { sendNotification } = require('../../util/sendPushNotification')
 
 exports.getAlertController = async (req, res, next) => {
   try {
-    const userId = req?.userId
+    const userId = req.userId
 
     const appConfig = await AppConfig.findOne({
       type: 'panic_mail_data'
     })
 
-    const mailSubject = appConfig?.panic_data?.mail_subject
-    const mailBody = appConfig?.panic_data?.mail_body
+    const mailSubject = appConfig?.panic_data?.mail_subject || 'Emergency Alert'
+
+    const mailBody = appConfig?.panic_data?.mail_body || ''
 
     const user = await User.aggregate([
       {
@@ -84,19 +87,28 @@ exports.getAlertController = async (req, res, next) => {
       }
     ])
 
-    const apartment = user[0].apartment_data
+    if (!user.length) {
+      throw new Error('User not found')
+    }
+
+    const currentUser = user[0]
+
+    const apartment = currentUser.apartment_data
       .map(item => item.apartment?.apartment_no)
       .filter(Boolean)
       .join(', ')
 
-    const tower = user[0].apartment_data
+    const tower = currentUser.apartment_data
       .map(item => item.tower?.name)
       .filter(Boolean)
       .join(', ')
 
-    const masterId = user[0]?.created_by
-    const ownerName = user[0]?.first_name + ' ' + user[0]?.last_name
-    const contactNo = user[0]?.phone
+    const ownerName =
+      `${currentUser.first_name} ${currentUser.last_name}`.trim()
+
+    const contactNo = currentUser.phone
+
+    const masterId = currentUser.created_by
 
     const alertTime = new Intl.DateTimeFormat('en-GB', {
       timeZone: 'Asia/Kolkata',
@@ -110,6 +122,10 @@ exports.getAlertController = async (req, res, next) => {
 
     const masterUser = await User.findById(masterId)
 
+    if (!masterUser) {
+      throw new Error('Master user not found')
+    }
+
     const finalMailBody = mailBody
       .replace(/{{owner_name}}/g, ownerName)
       .replace(/{{apartment_number}}/g, apartment)
@@ -117,7 +133,7 @@ exports.getAlertController = async (req, res, next) => {
       .replace(/{{alert_time}}/g, alertTime)
       .replace(/{{contact_number}}/g, contactNo)
 
-    const users = await User.aggregate([
+    const guards = await User.aggregate([
       {
         $match: {
           created_by: masterId
@@ -150,49 +166,100 @@ exports.getAlertController = async (req, res, next) => {
       }
     ])
 
-    const matchEmails = users.map(user => user.email)
+    const notificationUsers = [...guards]
 
-    const finalEmail = [...matchEmails, masterUser.email]
+    if (!notificationUsers.some(user => user._id.equals(masterUser._id))) {
+      notificationUsers.push(masterUser)
+    }
 
-    const matchIds = users.map(user => user._id)
-    const finalMatchId = [...matchIds, masterUser._id]
-
-    const notificationUsers = [...users, masterUser]
+    const finalEmails = [
+      ...new Set(notificationUsers.map(user => user.email).filter(Boolean))
+    ]
 
     await Promise.all(
-      notificationUsers.map(async user => {
-        if (!user.fcm_token) return
+      notificationUsers.map(async notifyUser => {
+        if (!notifyUser.fcm_token || typeof notifyUser.fcm_token !== 'string') {
+          return
+        }
 
         const phoneNumber = user?.phone
 
         try {
           await sendNotification(
-            user.fcm_token,
+            notifyUser.fcm_token,
             'Emergency Alert',
             `${ownerName} has triggered a panic alert. Contact: ${phoneNumber}.`,
             'panic_alert',
             String(userId),
             'high'
           )
+
+          await UserPushNotification.create({
+            title: 'Emergency Alert',
+            description: `${ownerName} has triggered a panic alert.`,
+            screen: 'panic_alert',
+            created_by: userId,
+            user_id: notifyUser._id,
+            fcm_token: notifyUser.fcm_token,
+            priority: 'high',
+            created_at: new Date()
+          })
+
+          console.log(
+            `✅ Notification sent to ${notifyUser.email || notifyUser._id}`
+          )
         } catch (err) {
           console.error(
-            `Failed to send notification to ${user.email}:`,
-            err.message
+            `❌ Failed to send notification to ${
+              notifyUser.email || notifyUser._id
+            }`
           )
+          console.error(err)
+
+          // Remove invalid FCM tokens
+          if (
+            err.code === 'messaging/registration-token-not-registered' ||
+            err.code === 'messaging/invalid-registration-token'
+          ) {
+            try {
+              await User.findByIdAndUpdate(notifyUser._id, {
+                $unset: {
+                  fcm_token: 1
+                }
+              })
+
+              console.log(
+                `🗑 Removed invalid FCM token for ${
+                  notifyUser.email || notifyUser._id
+                }`
+              )
+            } catch (updateErr) {
+              console.error('Error removing invalid FCM token:', updateErr)
+            }
+          }
         }
       })
     )
 
-    await SendUserMail(finalEmail, mailSubject, finalMailBody, userId)
-      .then(info => {
-        console.log('Mail sent:', info.messageId)
-      })
-      .catch(err => {
-        console.error('Error sending mail:', err)
-      })
+    try {
+      const info = await SendUserMail(
+        finalEmails,
+        mailSubject,
+        finalMailBody,
+        userId
+      )
 
-    return successResponse(res, 'Alert sent successfully', finalEmail)
+      console.log('✅ Mail sent:', info?.messageId || info)
+    } catch (mailError) {
+      console.error('❌ Error sending mail:', mailError)
+    }
+
+    return successResponse(res, 'Alert sent successfully', {
+      emails: finalEmails,
+      totalNotifications: notificationUsers.length
+    })
   } catch (error) {
+    console.error('getAlertController Error:', error)
     next(error)
   }
 }
