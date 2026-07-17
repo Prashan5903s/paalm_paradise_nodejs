@@ -182,7 +182,7 @@ exports.getAlertController = async (req, res, next) => {
           return
         }
 
-        const phoneNumber = user?.phone
+        const phoneNumber = notifyUser?.phone
 
         try {
           await sendNotification(
