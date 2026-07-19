@@ -34,7 +34,7 @@ if (!fs.existsSync(imageDir)) {
 
 // Middleware
 app.use(cors({
-    origin: "*", // allow requests from any origin
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true
