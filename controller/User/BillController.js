@@ -274,6 +274,7 @@ exports.downloadInvoicePDF = async (req, res, next) => {
         let total = 0;
         const formatINR = (n) => n.toLocaleString("en-IN");
 
+            
         bill.payments.forEach((p, i) => {
             total += p.amount;
             doc.font("Helvetica").fontSize(10).fillColor("#000");
