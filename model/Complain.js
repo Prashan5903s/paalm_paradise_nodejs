@@ -67,9 +67,14 @@ complainSchema.pre('save', async function (next) {
 
     // Get next sequence
     const counter = await Counter.findByIdAndUpdate(
-        'receipt',
-        { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        'receipt', {
+            $inc: {
+                seq: 1
+            }
+        }, {
+            new: true,
+            upsert: true
+        }
     );
 
     const seq = counter.seq;
