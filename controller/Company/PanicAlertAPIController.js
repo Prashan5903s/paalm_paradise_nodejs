@@ -78,7 +78,7 @@ exports.postPanicController = async (req, res, next) => {
     await Promise.all(
       user_id.map(async u => {
         try {
-          const user = await User.findById(u)
+          const user = await User.findById(u).select('_id fcm_token')
 
           if (!user) return
 
@@ -101,7 +101,7 @@ exports.postPanicController = async (req, res, next) => {
             user_id: user._id,
             fcm_token: user.fcm_token,
             screen: 'panic_alert',
-            high: 'priority',
+            priority: 'high',
             title,
             description,
             notification_type_id,
@@ -112,7 +112,7 @@ exports.postPanicController = async (req, res, next) => {
 
           await userNotifyPush.save()
         } catch (err) {
-          console.error(`Notification failed for user ${u._id}`, err.message)
+          console.error(`Notification failed for user ${u}`, err.message)
         }
       })
     )
