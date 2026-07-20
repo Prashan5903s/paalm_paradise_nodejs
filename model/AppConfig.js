@@ -8,7 +8,7 @@ const appConfigSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      maxLength: 11
+      maxLength: 100
     },
     terms_condition: {
       type: String,
@@ -34,15 +34,22 @@ const appConfigSchema = new mongoose.Schema(
     panic_data: {
       mail_subject: {
         type: String,
-        required: true,
         maxLength: 255
       },
       mail_body: {
         type: String,
-        required: true,
         maxLength: 1000
       }
-    }
+    },
+    notification_type_data: [
+      {
+        title: {
+          type: String,
+          maxLength: 255,
+          required: true
+        }
+      }
+    ]
   },
   {
     collection: 'app_config'

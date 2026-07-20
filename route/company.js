@@ -1,9 +1,9 @@
-const express = require('express');
-const router = express.Router();
-const isAuth = require('../middleware/is-auth');
-const appMenuController = require('../controller/Company/AppMenuController');
+const express = require('express')
+const router = express.Router()
+const isAuth = require('../middleware/is-auth')
+const appMenuController = require('../controller/Company/AppMenuController')
 const roleController = require('../controller/Company/RoleAPIController')
-const towerController = require('../controller/Company/TowerController');
+const towerController = require('../controller/Company/TowerController')
 const floorController = require('../controller/Company/FloorController')
 const apartmentController = require('../controller/Company/ApartmentController')
 const cameraController = require('../controller/Company/CameraController')
@@ -20,51 +20,61 @@ const ticketTypeController = require('../controller/Company/TicketTypeController
 const visitorTypeController = require('../controller/Company/VisitorTypeController')
 const reportController = require('../controller/Company/ReportController')
 const tenantController = require('../controller/Company/TenantAPIController')
+const panicAlertController = require('../controller/Company/PanicAlertAPIController')
 
-const createUpload = require('../util/upload');
+const createUpload = require('../util/upload')
 
 const activityUpload = createUpload(
-    [
-        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-        'image/svg+xml', 'image/bmp', 'image/tiff', 'image/x-icon',
-        'application/pdf', 'application/zip',
-        'application/x-zip-compressed',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-        'video/mp4'
-    ],
-    'bills', // Folder inside /public
-    500 // Max size in MB
-);
+  [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/bmp',
+    'image/tiff',
+    'image/x-icon',
+    'application/pdf',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'video/mp4'
+  ],
+  'bills', // Folder inside /public
+  500 // Max size in MB
+)
 
-const {
-    middleware: imageUpload
-} = createUpload(
-    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
-    'uploads/images' // directory inside /public/
-);
+const { middleware: imageUpload } = createUpload(
+  ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+  'uploads/images' // directory inside /public/
+)
 
-const {
-    middleware: imageNoticeUpload
-} = createUpload(
-    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
-    'uploads/notice' // directory inside /public/
-);
+const { middleware: imageNoticeUpload } = createUpload(
+  ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+  'uploads/notice' // directory inside /public/
+)
 
-const {
-    middleware: imageEventUpload
-} = createUpload(
-    ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
-    'uploads/event' // directory inside /public/
-);
+const { middleware: imageEventUpload } = createUpload(
+  ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+  'uploads/event' // directory inside /public/
+)
 
-router.get('/app/menu/label/listing/:sn', isAuth, appMenuController.getAppMenuCompanyListAPI);
-router.post('/app/menu/label/listing/:sn', isAuth, appMenuController.postCompanyMenuListAPI);
+router.get(
+  '/app/menu/label/listing/:sn',
+  isAuth,
+  appMenuController.getAppMenuCompanyListAPI
+)
+router.post(
+  '/app/menu/label/listing/:sn',
+  isAuth,
+  appMenuController.postCompanyMenuListAPI
+)
 
 //This route is for role
 router.get('/role', isAuth, roleController.getRoleAPI)
-router.get('/role/create', isAuth, roleController.createRoleAPI);
+router.get('/role/create', isAuth, roleController.createRoleAPI)
 router.post('/role', isAuth, roleController.postRoleAPI)
 router.put('/role/:roleId', isAuth, roleController.putRoleAPI)
 
@@ -83,7 +93,11 @@ router.put('/floor/:floorId', isAuth, floorController.updateFloorAPI)
 router.get('/apartment', isAuth, apartmentController.getApartmentAPI)
 router.get('/apartment/create', isAuth, apartmentController.createApartmentAPI)
 router.post('/apartment', isAuth, apartmentController.postApartmentAPI)
-router.put('/apartment/:apartmentId', isAuth, apartmentController.updateApartmentAPI)
+router.put(
+  '/apartment/:apartmentId',
+  isAuth,
+  apartmentController.updateApartmentAPI
+)
 
 //This route is for camera
 router.get('/camera', isAuth, cameraController.getCameraController)
@@ -91,21 +105,51 @@ router.get('/camera', isAuth, cameraController.getCameraController)
 //This route is for Bill
 router.get('/bill/data/:type', isAuth, billController.getBillData)
 router.get('/bill/create', isAuth, billController.getCreateBill)
-router.post('/bill', isAuth, ...activityUpload.middleware('image'), billController.postBillController)
-router.put('/bill/update/:billId', isAuth, ...activityUpload.middleware('image'), billController.putBillController)
+router.post(
+  '/bill',
+  isAuth,
+  ...activityUpload.middleware('image'),
+  billController.postBillController
+)
+router.put(
+  '/bill/update/:billId',
+  isAuth,
+  ...activityUpload.middleware('image'),
+  billController.putBillController
+)
 
 //This route is for payment
-router.get("/payment", isAuth, paymentController.getPaymentController)
+router.get('/payment', isAuth, paymentController.getPaymentController)
 router.post('/payment', isAuth, paymentController.postPaymentController)
 
 //This route is for User Bill
-router.get('/user/bill/:billId', isAuth, userBillController.getUserBillController)
-router.post('/user/bill/data/payment', isAuth, userBillController.postUserBillController)
+router.get(
+  '/user/bill/:billId',
+  isAuth,
+  userBillController.getUserBillController
+)
+router.post(
+  '/user/bill/data/payment',
+  isAuth,
+  userBillController.postUserBillController
+)
 
 //This route is for company
-router.get('/complain/data/:status', isAuth, complainController.getComplainController)
-router.get('/complain/create', isAuth, complainController.createComplainController)
-router.post('/complain/data/:id/:code', isAuth, complainController.postComplainController)
+router.get(
+  '/complain/data/:status',
+  isAuth,
+  complainController.getComplainController
+)
+router.get(
+  '/complain/create',
+  isAuth,
+  complainController.createComplainController
+)
+router.post(
+  '/complain/data/:id/:code',
+  isAuth,
+  complainController.postComplainController
+)
 
 //This route is for dashboard
 router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
@@ -113,19 +157,51 @@ router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
 //This route is for notice
 router.get('/notice', isAuth, noticeController.getNoticeAPIController)
 router.get('/notice/create', isAuth, noticeController.createNoticeAPI)
-router.post('/notice', isAuth, imageNoticeUpload("photo"), noticeController.postNoticeController)
-router.put('/notice/update/:id', isAuth, imageNoticeUpload("photo"), noticeController.updateNoticeAPIController)
+router.post(
+  '/notice',
+  isAuth,
+  imageNoticeUpload('photo'),
+  noticeController.postNoticeController
+)
+router.put(
+  '/notice/update/:id',
+  isAuth,
+  imageNoticeUpload('photo'),
+  noticeController.updateNoticeAPIController
+)
 
 //This route is for event
 router.get('/event', isAuth, eventController.getEventAPIController)
 router.get('/event/create', isAuth, eventController.createEventController)
-router.post('/event', isAuth, imageEventUpload("photo"), eventController.postEventControllerAPI)
-router.put('/event/update/:id', isAuth, imageEventUpload("photo"), eventController.updateEventControllerAPI)
+router.post(
+  '/event',
+  isAuth,
+  imageEventUpload('photo'),
+  eventController.postEventControllerAPI
+)
+router.put(
+  '/event/update/:id',
+  isAuth,
+  imageEventUpload('photo'),
+  eventController.updateEventControllerAPI
+)
 
 //This route is for maintenance
-router.get("/maintenance-setting", isAuth, maintenanceController.getMaintenanceAPIController)
-router.get('/maintenance-setting/data/create', isAuth, maintenanceController.createApartmentTypeController)
-router.post('/maintenance-setting/:type', isAuth, maintenanceController.postMaintenanceAPIController)
+router.get(
+  '/maintenance-setting',
+  isAuth,
+  maintenanceController.getMaintenanceAPIController
+)
+router.get(
+  '/maintenance-setting/data/create',
+  isAuth,
+  maintenanceController.createApartmentTypeController
+)
+router.post(
+  '/maintenance-setting/:type',
+  isAuth,
+  maintenanceController.postMaintenanceAPIController
+)
 
 //This route is for apartment type
 router.get('/apartment-type', isAuth, apartmentTypeController.getApartmentType)
@@ -143,17 +219,57 @@ router.post('/visitor-type', isAuth, visitorTypeController.postType)
 router.put('/visitor-type/:id', isAuth, visitorTypeController.updateType)
 
 //This route is for payment report
-router.get('/graph/payment/report/:type', isAuth, reportController.getGraphPaymentReport)
-router.get('/table/payment/report/:start/:end/:type', isAuth, reportController.getTablePaymentReport)
+router.get(
+  '/graph/payment/report/:type',
+  isAuth,
+  reportController.getGraphPaymentReport
+)
+router.get(
+  '/table/payment/report/:start/:end/:type',
+  isAuth,
+  reportController.getTablePaymentReport
+)
 
 //This route is for financial report
-router.get("/table/financial/report/:start/:end/:type", isAuth, reportController.getFinancialReport)
+router.get(
+  '/table/financial/report/:start/:end/:type',
+  isAuth,
+  reportController.getFinancialReport
+)
 
 //This route is for tenant
 router.get('/tenant', isAuth, tenantController.getTenantAPIController)
-router.get('/tenant/create/data', isAuth, tenantController.getTenantCreateAPIController)
+router.get(
+  '/tenant/create/data',
+  isAuth,
+  tenantController.getTenantCreateAPIController
+)
 router.get('/tenant/edit/:id', isAuth, tenantController.getEditTenantAPI)
-router.post('/tenant', isAuth, imageUpload('photo'), tenantController.postTenantAPIController)
-router.put('/tenant/update/:id', imageUpload('photo'), isAuth, tenantController.putTenantController)
+router.post(
+  '/tenant',
+  isAuth,
+  imageUpload('photo'),
+  tenantController.postTenantAPIController
+)
+router.put(
+  '/tenant/update/:id',
+  imageUpload('photo'),
+  isAuth,
+  tenantController.putTenantController
+)
 
-module.exports = router;
+//THis is the route for admin push notification
+router.get(
+  '/user/push/notification',
+  isAuth,
+  panicAlertController.getPanicALertAPI
+)
+
+router.get('/user/push/create', isAuth, panicAlertController.getPanicCreateAPI)
+router.post(
+  '/user/push/notification',
+  isAuth,
+  panicAlertController.postPanicController
+)
+
+module.exports = router

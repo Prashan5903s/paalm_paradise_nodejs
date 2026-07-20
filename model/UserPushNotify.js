@@ -7,6 +7,14 @@ const userPushNotifySchema = new mongoose.Schema(
       ref: 'users',
       required: true
     },
+    notification_type_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false
+    },
+    user_type_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false
+    },
     fcm_token: {
       type: String,
       maxLength: 25000,
