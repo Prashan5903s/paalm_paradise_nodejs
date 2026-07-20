@@ -97,7 +97,7 @@ exports.postPanicController = async (req, res, next) => {
             'high'
           )
 
-          await UserPushNotification.create({
+          const userNotifyPush = new UserPushNotification({
             user_id: user._id,
             fcm_token: user.fcm_token,
             screen: 'panic_alert',
@@ -109,6 +109,8 @@ exports.postPanicController = async (req, res, next) => {
             created_by: userId,
             created_at: new Date()
           })
+
+          await userNotifyPush.save()
         } catch (err) {
           console.error(`Notification failed for user ${u._id}`, err.message)
         }
