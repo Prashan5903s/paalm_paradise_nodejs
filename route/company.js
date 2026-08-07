@@ -151,6 +151,8 @@ router.post(
   complainController.postComplainController
 )
 
+router.get("/complain/report/data", isAuth, complainController.getComplainReportDataAPI)
+
 //This route is for dashboard
 router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
 

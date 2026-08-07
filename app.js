@@ -9,7 +9,6 @@ const userRouter = require('./route/user')
 const path = require('path')
 const bcrypt = require('bcryptjs')
 const fs = require('fs')
-// const Maintenance = require('./model/Maintenance')
 const cors = require('cors')
 const User = require('./model/User')
 const AppConfig = require('./model/AppConfig')
@@ -24,6 +23,10 @@ const port = process.env.PORT || 4000
 // Define public directory
 const publicDir = path.join(__dirname, 'public')
 const imageDir = path.join(publicDir, 'company_logo')
+    
+const dns = require('dns')
+
+dns.setServers(['0.0.0.0', '1.1.1.1'])
 
 // Ensure /public/company_logo folder exists
 if (!fs.existsSync(imageDir)) {
@@ -41,8 +44,6 @@ app.use(
     credentials: true
   })
 )
-
-
 
 app.use(
   express.json({
