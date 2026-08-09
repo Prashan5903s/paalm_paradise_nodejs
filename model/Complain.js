@@ -33,7 +33,7 @@ const complainSchema = new mongoose.Schema({
         type: String,
         required: true,
         eNum: ["1", "2", "3"]
-    }
+    },
 
     complain_status: {
         type: Number,
