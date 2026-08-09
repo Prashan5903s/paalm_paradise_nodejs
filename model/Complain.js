@@ -1,5 +1,5 @@
-const mongoose = require('mongoose')
-const Counter = require('../model/Counter')
+const mongoose = require('mongoose');
+const Counter = require('../model/Counter');
 
 const complainSchema = new mongoose.Schema({
     happy_code: {
@@ -7,81 +7,94 @@ const complainSchema = new mongoose.Schema({
         required: true,
         maxLength: 6
     },
+
     complain_no: {
         type: String,
-        uinque: true
+        unique: true
     },
-    assigned_to: {
-        user: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: false,
-            ref: "users"
-        },
-        remark: {
-            type: String,
-            required: false,
-            maxLength: 5000,
-        },
-    },
+
     nature: {
         type: Number,
         required: true
-    }, // 1 for Complaint, 2 for suggestion
+    },
+
     complain_type: {
         type: Number,
         required: true
-    }, // 1 for individual, 2 for society
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        ref: "ticket_type"
     },
+
     description: {
         type: String,
         required: true,
         maxLength: 5000
     },
+
+    priority:{
+        type: String,
+        required: true,
+        eNum: ["1", "2", "3"]
+    }
+
     complain_status: {
         type: Number,
+        default: 1
+    },
+
+    category: {
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
-        default: 1,
-    }, // 1 for Pending, 2 = assigned, 3 for resolved
+        ref: 'TicketType'
+    },
+
     created_by: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: "users"
+        ref: 'users'
     },
+
+    assigned_to: {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'users'
+        },
+        remark: {
+            type: String,
+            maxLength: 5000
+        }
+    },
+
     created_at: {
         type: Date,
-        default: Date.now()
+        default: Date.now
     },
+
     updated_at: {
-        type: Date,
-        required: false
+        type: Date
     }
-})
-
-complainSchema.pre('save', async function (next) {
-
-    if (this.complain_no) return next(); // Already set
-
-    // Get next sequence
-    const counter = await Counter.findByIdAndUpdate(
-        'receipt', {
-            $inc: {
-                seq: 1
-            }
-        }, {
-            new: true,
-            upsert: true
-        }
-    );
-
-    const seq = counter.seq;
-    const seqPadded = String(seq).padStart(2, '0');
-
-    this.complain_no = `101${seqPadded}`;
-    next();
 });
 
-module.exports = mongoose.model('complain', complainSchema)
+complainSchema.pre('save', async function (next) {
+    try {
+        if (this.complain_no) return next();
+
+        const counter = await Counter.findByIdAndUpdate(
+            'receipt', {
+                $inc: {
+                    seq: 1
+                }
+            }, {
+                new: true,
+                upsert: true
+            }
+        );
+
+        const seqPadded = String(counter.seq).padStart(2, '0');
+        this.complain_no = `101${seqPadded}`;
+
+        next();
+    } catch (err) {
+        next(err);
+    }
+});
+
+module.exports = mongoose.model('complain', complainSchema);
