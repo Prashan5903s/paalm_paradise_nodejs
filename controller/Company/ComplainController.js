@@ -48,7 +48,8 @@ exports.getComplainController = async (req, res, next) => {
             },
             {
               $sort: {
-                created_at: 1
+                created_at: -1,
+                _id: -1
               } // oldest → latest
             }
           ],
@@ -313,11 +314,29 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     }
 
+    // Priority
     if (priority !== '') {
       const priorityValue = String(priority)
 
       if (['1', '2', '3'].includes(priorityValue)) {
-        matchStage.priority = priorityValue
+        if (priorityValue === '3') {
+          // Treat null/missing priority as Low
+          matchStage.$or = [
+            {
+              priority: '3'
+            },
+            {
+              priority: null
+            },
+            {
+              priority: {
+                $exists: false
+              }
+            }
+          ]
+        } else {
+          matchStage.priority = priorityValue
+        }
       }
     }
 
@@ -330,6 +349,17 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       {
         $match: matchStage
       },
+
+      // Default null/missing priority to Low (3)
+      {
+        $addFields: {
+          priority: {
+            $ifNull: ['$priority', '3']
+          }
+        }
+      },
+
+      // Created By User
       {
         $lookup: {
           from: 'users',
@@ -358,6 +388,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
+    // Resident search
     if (resident && resident.trim() !== '') {
       const escapedResident = resident
         .trim()
@@ -409,6 +440,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
     }
 
     pipeline.push(
+      // Tower
       {
         $lookup: {
           from: 'towers',
@@ -425,12 +457,15 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'tower'
         }
       },
+
       {
         $unwind: {
           path: '$tower',
           preserveNullAndEmptyArrays: true
         }
       },
+
+      // Floor
       {
         $lookup: {
           from: 'floors',
@@ -455,6 +490,8 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
+
+      // Category
       {
         $lookup: {
           from: 'ticket_types',
@@ -471,12 +508,15 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'category'
         }
       },
+
       {
         $unwind: {
           path: '$category',
           preserveNullAndEmptyArrays: true
         }
       },
+
+      // Complaint users
       {
         $lookup: {
           from: 'complain_users',
@@ -493,13 +533,15 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
             },
             {
               $sort: {
-                created_at: 1
+                created_at: -1
               }
             }
           ],
           as: 'complain_users'
         }
       },
+
+      // Latest complaint user
       {
         $addFields: {
           latest_complain_user: {
@@ -507,6 +549,8 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
+
+      // Nature data
       {
         $addFields: {
           nature_data: {
@@ -548,6 +592,8 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
+
+      // Complaint status data
       {
         $addFields: {
           complain_status_data: {
@@ -582,6 +628,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     )
 
+    // Complaint status filter
     if (status !== '') {
       pipeline.push({
         $match: {
@@ -598,6 +645,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
     }
 
     pipeline.push(
+      // Assigned user
       {
         $lookup: {
           from: 'users',
@@ -617,22 +665,27 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'assigned_user'
         }
       },
+
       {
         $unwind: {
           path: '$assigned_user',
           preserveNullAndEmptyArrays: true
         }
       },
+
       {
         $addFields: {
           assigned_user: '$assigned_user'
         }
       },
+
+      // Latest complaints first
       {
         $sort: {
           created_at: -1
         }
       },
+
       {
         $project: {
           complain_users: 0,
