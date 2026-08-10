@@ -219,6 +219,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       priority = ''
     } = req.query
 
+    // ---------------------------------------------------------
+    // Master data
+    // ---------------------------------------------------------
     const [towers, floors, ticketType, users] = await Promise.all([
       Tower.find({
         created_by: userId,
@@ -246,10 +249,13 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           $ne: '4'
         }
       })
-        .select('_id first_name last_name email phone')
+        .select('_id first_name last_name email phone apartment_data')
         .lean()
     ])
 
+    // ---------------------------------------------------------
+    // Status master data
+    // ---------------------------------------------------------
     const statusData = [
       {
         title: 'Pending',
@@ -269,6 +275,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
+    // ---------------------------------------------------------
+    // Priority master data
+    // ---------------------------------------------------------
     const priorityData = [
       {
         title: 'High',
@@ -284,28 +293,26 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
+    // ---------------------------------------------------------
+    // Base match
+    // ---------------------------------------------------------
     const matchStage = {
       created_by: {
         $in: users.map(user => user._id)
       }
     }
 
-    // Tower
-    if (tower && mongoose.Types.ObjectId.isValid(tower)) {
-      matchStage.tower = new mongoose.Types.ObjectId(tower)
-    }
-
-    // Floor
-    if (floor && mongoose.Types.ObjectId.isValid(floor)) {
-      matchStage.floor = new mongoose.Types.ObjectId(floor)
-    }
-
-    // Category
+    // ---------------------------------------------------------
+    // Category filter
+    // ---------------------------------------------------------
     if (category && mongoose.Types.ObjectId.isValid(category)) {
-      matchStage.category = new mongoose.Types.ObjectId(category)
+      matchStage.category =
+        mongoose.Types.ObjectId.createFromHexString(category)
     }
 
-    // Nature
+    // ---------------------------------------------------------
+    // Nature filter
+    // ---------------------------------------------------------
     if (nature !== '') {
       const natureValue = Number(nature)
 
@@ -314,7 +321,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     }
 
-    // Priority
+    // ---------------------------------------------------------
+    // Priority filter
+    // ---------------------------------------------------------
     if (priority !== '') {
       const priorityValue = String(priority)
 
@@ -340,17 +349,26 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     }
 
-    // Assigned user
+    // ---------------------------------------------------------
+    // Assigned user filter
+    // ---------------------------------------------------------
     if (assignedTo && mongoose.Types.ObjectId.isValid(assignedTo)) {
-      matchStage['assigned_to.user'] = new mongoose.Types.ObjectId(assignedTo)
+      matchStage['assigned_to.user'] =
+        mongoose.Types.ObjectId.createFromHexString(assignedTo)
     }
+
+    // ---------------------------------------------------------
+    // Pipeline
+    // ---------------------------------------------------------
 
     const pipeline = [
       {
         $match: matchStage
       },
 
-      // Default null/missing priority to Low (3)
+      // -------------------------------------------------------
+      // Default null/missing priority to Low
+      // -------------------------------------------------------
       {
         $addFields: {
           priority: {
@@ -359,7 +377,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Created By User
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'users',
@@ -372,7 +392,15 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
                 first_name: 1,
                 last_name: 1,
                 email: 1,
-                phone: 1
+                phone: 1,
+
+                // Required for tower/floor filtering
+                apartment_data: 1,
+
+                // Existing direct fields, if required elsewhere
+                tower_id: 1,
+                floor_id: 1,
+                apartment_id: 1
               }
             }
           ],
@@ -380,6 +408,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
+      // Unwind created_by
+      // -------------------------------------------------------
       {
         $unwind: {
           path: '$created_by',
@@ -388,7 +419,63 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
+    if (tower && mongoose.Types.ObjectId.isValid(tower)) {
+      pipeline.push({
+        $match: {
+          'created_by.apartment_data': {
+            $elemMatch: {
+              tower_id: new mongoose.Types.ObjectId(tower)
+            }
+          }
+        }
+      })
+    }
+
+    // ---------------------------------------------------------
+    // Floor Filter
+    //
+    // Filter complaint based on:
+    // created_by.apartment_data[].floor_id
+    // ---------------------------------------------------------
+    if (floor && mongoose.Types.ObjectId.isValid(floor)) {
+      pipeline.push({
+        $match: {
+          'created_by.apartment_data': {
+            $elemMatch: {
+              floor_id: new mongoose.Types.ObjectId(floor)
+            }
+          }
+        }
+      })
+    }
+
+    if (tower && mongoose.Types.ObjectId.isValid(tower)) {
+      pipeline.push({
+        $match: {
+          'created_by.apartment_data': {
+            $elemMatch: {
+              tower_id: mongoose.Types.ObjectId.createFromHexString(tower)
+            }
+          }
+        }
+      })
+    }
+
+    if (floor && mongoose.Types.ObjectId.isValid(floor)) {
+      pipeline.push({
+        $match: {
+          'created_by.apartment_data': {
+            $elemMatch: {
+              floor_id: mongoose.Types.ObjectId.createFromHexString(floor)
+            }
+          }
+        }
+      })
+    }
+
+    // ---------------------------------------------------------
     // Resident search
+    // ---------------------------------------------------------
     if (resident && resident.trim() !== '') {
       const escapedResident = resident
         .trim()
@@ -439,8 +526,13 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
+    // ---------------------------------------------------------
+    // Remaining lookups
+    // ---------------------------------------------------------
     pipeline.push(
+      // -------------------------------------------------------
       // Tower
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'towers',
@@ -465,7 +557,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Floor
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'floors',
@@ -491,7 +585,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Category
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'ticket_types',
@@ -516,7 +612,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Complaint users
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'complain_users',
@@ -531,6 +629,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
                 }
               }
             },
+
             {
               $sort: {
                 created_at: -1
@@ -541,16 +640,23 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Latest complaint user
+      //
+      // Since complain_users is sorted DESC,
+      // index 0 is the latest record.
+      // -------------------------------------------------------
       {
         $addFields: {
           latest_complain_user: {
-            $arrayElemAt: ['$complain_users', -1]
+            $arrayElemAt: ['$complain_users', 0]
           }
         }
       },
 
+      // -------------------------------------------------------
       // Nature data
+      // -------------------------------------------------------
       {
         $addFields: {
           nature_data: {
@@ -593,7 +699,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
       // Complaint status data
+      // -------------------------------------------------------
       {
         $addFields: {
           complain_status_data: {
@@ -628,7 +736,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     )
 
+    // ---------------------------------------------------------
     // Complaint status filter
+    // ---------------------------------------------------------
     if (status !== '') {
       pipeline.push({
         $match: {
@@ -644,8 +754,13 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
+    // ---------------------------------------------------------
+    // Assigned user lookup + sorting + projection
+    // ---------------------------------------------------------
     pipeline.push(
+      // -------------------------------------------------------
       // Assigned user
+      // -------------------------------------------------------
       {
         $lookup: {
           from: 'users',
@@ -666,6 +781,9 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
+      // -------------------------------------------------------
+      // Unwind assigned user
+      // -------------------------------------------------------
       {
         $unwind: {
           path: '$assigned_user',
@@ -673,19 +791,18 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         }
       },
 
-      {
-        $addFields: {
-          assigned_user: '$assigned_user'
-        }
-      },
-
+      // -------------------------------------------------------
       // Latest complaints first
+      // -------------------------------------------------------
       {
         $sort: {
           created_at: -1
         }
       },
 
+      // -------------------------------------------------------
+      // Final projection
+      // -------------------------------------------------------
       {
         $project: {
           complain_users: 0,
@@ -694,8 +811,14 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     )
 
+    // ---------------------------------------------------------
+    // Execute aggregation
+    // ---------------------------------------------------------
     const complain = await Complain.aggregate(pipeline)
 
+    // ---------------------------------------------------------
+    // Final response
+    // ---------------------------------------------------------
     const finalData = {
       compLen: complain.length,
       complain,
