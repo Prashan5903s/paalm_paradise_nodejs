@@ -5,12 +5,9 @@ const Tower = require('../../model/Tower')
 const Floor = require('../../model/Floor')
 const TicketType = require('../../model/TicketType')
 const ComplainUser = require('../../model/ComplainUser')
-const {
-  errorResponse,
-  successResponse
-} = require('../../util/response')
+const { errorResponse, successResponse } = require('../../util/response')
 
-const mongoose = require("mongoose")
+const mongoose = require('mongoose')
 
 exports.getComplainController = async (req, res, next) => {
   try {
@@ -27,7 +24,8 @@ exports.getComplainController = async (req, res, next) => {
 
     const status = req?.params.status
 
-    const complain = await Complain.aggregate([{
+    const complain = await Complain.aggregate([
+      {
         $match: {
           created_by: {
             $in: userIds
@@ -40,7 +38,8 @@ exports.getComplainController = async (req, res, next) => {
           let: {
             complainId: '$_id'
           },
-          pipeline: [{
+          pipeline: [
+            {
               $match: {
                 $expr: {
                   $eq: ['$complain_id', '$$complainId']
@@ -143,11 +142,7 @@ exports.postComplainController = async (req, res, next) => {
     const id = req.params.id
     const code = req.params.code
 
-    const {
-      status,
-      user,
-      remark
-    } = req.body
+    const { status, user, remark } = req.body
 
     const complain = await Complain.findById(id)
 
@@ -210,205 +205,286 @@ exports.postComplainController = async (req, res, next) => {
 
 exports.getComplainReportDataAPI = async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const userId = req.userId
 
     const {
-      tower,
-      floor,
-      category,
-      status,
-      assignedTo,
-      resident
-    } = req.query;
+      tower = '',
+      floor = '',
+      category = '',
+      nature = '',
+      status = '',
+      assignedTo = '',
+      resident = '',
+      priority = ''
+    } = req.query
 
-    // Master data
     const [towers, floors, ticketType, users] = await Promise.all([
       Tower.find({
         created_by: userId,
         status: true
-      }).select('_id name'),
+      })
+        .select('_id name')
+        .lean(),
 
       Floor.find({
         created_by: userId,
         status: true
-      }).select('_id name floor_name'),
+      })
+        .select('_id name floor_name')
+        .lean(),
 
       TicketType.find({
         created_by: userId
-      }).select('_id name'),
+      })
+        .select('_id name')
+        .lean(),
 
       User.find({
         created_by: userId,
         user_type: {
           $ne: '4'
         }
-      }).select('_id first_name last_name email')
-    ]);
+      })
+        .select('_id first_name last_name email phone')
+        .lean()
+    ])
 
-    const userIds = users.map(u => u._id);
-
-    const statusMap = {
-      1: "Pending",
-      2: "Assigned",
-      3: "Resolved",
-      4: "In progress"
-    };
-
-    const statusData = [{
+    const statusData = [
+      {
         title: 'Pending',
-        value: 1
+        value: '1'
       },
       {
         title: 'Assigned',
-        value: 2
+        value: '2'
       },
       {
         title: 'Resolved',
-        value: 3
+        value: '3'
       },
       {
         title: 'In progress',
-        value: 4
+        value: '4'
       }
-    ];
+    ]
 
-    // Initial match
+    const priorityData = [
+      {
+        title: 'High',
+        value: '1'
+      },
+      {
+        title: 'Medium',
+        value: '2'
+      },
+      {
+        title: 'Low',
+        value: '3'
+      }
+    ]
+
     const matchStage = {
       created_by: {
-        $in: userIds
+        $in: users.map(user => user._id)
       }
-    };
+    }
 
+    // Tower
     if (tower && mongoose.Types.ObjectId.isValid(tower)) {
-      matchStage.tower =
-        mongoose.Types.ObjectId.createFromHexString(tower);
+      matchStage.tower = new mongoose.Types.ObjectId(tower)
     }
 
+    // Floor
     if (floor && mongoose.Types.ObjectId.isValid(floor)) {
-      matchStage.floor =
-        mongoose.Types.ObjectId.createFromHexString(floor);
+      matchStage.floor = new mongoose.Types.ObjectId(floor)
     }
 
+    // Category
     if (category && mongoose.Types.ObjectId.isValid(category)) {
-      matchStage.category =
-        mongoose.Types.ObjectId.createFromHexString(category);
+      matchStage.category = new mongoose.Types.ObjectId(category)
     }
 
+    // Nature
+    if (nature !== '') {
+      const natureValue = Number(nature)
+
+      if ([1, 2, 3].includes(natureValue)) {
+        matchStage.nature = natureValue
+      }
+    }
+
+    if (priority !== '') {
+      const priorityValue = String(priority)
+
+      if (['1', '2', '3'].includes(priorityValue)) {
+        matchStage.priority = priorityValue
+      }
+    }
+
+    // Assigned user
     if (assignedTo && mongoose.Types.ObjectId.isValid(assignedTo)) {
-      matchStage['assigned_to.user'] =
-        mongoose.Types.ObjectId.createFromHexString(assignedTo);
+      matchStage['assigned_to.user'] = new mongoose.Types.ObjectId(assignedTo)
     }
 
-    const pipeline = [{
+    const pipeline = [
+      {
         $match: matchStage
       },
-
-      // Resident / Created by user
       {
         $lookup: {
           from: 'users',
           localField: 'created_by',
           foreignField: '_id',
-          pipeline: [{
-            $project: {
-              _id: 1,
-              first_name: 1,
-              last_name: 1
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                first_name: 1,
+                last_name: 1,
+                email: 1,
+                phone: 1
+              }
             }
-          }],
+          ],
           as: 'created_by'
         }
       },
+
       {
         $unwind: {
           path: '$created_by',
           preserveNullAndEmptyArrays: true
         }
       }
-    ];
+    ]
 
-    // Search resident by name
-    if (resident) {
+    if (resident && resident.trim() !== '') {
+      const escapedResident = resident
+        .trim()
+        .replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
       pipeline.push({
         $match: {
-          $or: [{
+          $or: [
+            {
               'created_by.first_name': {
-                $regex: resident,
+                $regex: escapedResident,
                 $options: 'i'
               }
             },
             {
               'created_by.last_name': {
-                $regex: resident,
+                $regex: escapedResident,
+                $options: 'i'
+              }
+            },
+            {
+              $expr: {
+                $regexMatch: {
+                  input: {
+                    $concat: [
+                      {
+                        $ifNull: ['$created_by.first_name', '']
+                      },
+                      ' ',
+                      {
+                        $ifNull: ['$created_by.last_name', '']
+                      }
+                    ]
+                  },
+                  regex: escapedResident,
+                  options: 'i'
+                }
+              }
+            },
+            {
+              'created_by.phone': {
+                $regex: escapedResident,
                 $options: 'i'
               }
             }
           ]
         }
-      });
+      })
     }
 
     pipeline.push(
-      // Tower
       {
         $lookup: {
           from: 'towers',
           localField: 'tower',
           foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
+            }
+          ],
           as: 'tower'
         }
-      }, {
+      },
+      {
         $unwind: {
           path: '$tower',
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // Floor
       {
         $lookup: {
           from: 'floors',
           localField: 'floor',
           foreignField: '_id',
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1,
+                floor_name: 1
+              }
+            }
+          ],
           as: 'floor'
         }
-      }, {
+      },
+
+      {
         $unwind: {
           path: '$floor',
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // Category
       {
         $lookup: {
           from: 'ticket_types',
           localField: 'category',
           foreignField: '_id',
-          pipeline: [{
-            $project: {
-              _id: 1,
-              name: 1
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                name: 1
+              }
             }
-          }],
+          ],
           as: 'category'
         }
-      }, {
+      },
+      {
         $unwind: {
           path: '$category',
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // Complaint history (same as first API)
       {
         $lookup: {
           from: 'complain_users',
           let: {
             complainId: '$_id'
           },
-          pipeline: [{
+          pipeline: [
+            {
               $match: {
                 $expr: {
                   $eq: ['$complain_id', '$$complainId']
@@ -424,23 +500,19 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'complain_users'
         }
       },
-
-      // Add full history + latest entry
       {
         $addFields: {
-          all_complain_users: '$complain_users',
           latest_complain_user: {
-            $last: '$complain_users'
+            $arrayElemAt: ['$complain_users', -1]
           }
         }
       },
-
-      // Nature data
       {
         $addFields: {
           nature_data: {
             $switch: {
-              branches: [{
+              branches: [
+                {
                   case: {
                     $eq: ['$nature', 1]
                   },
@@ -476,13 +548,12 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
-
-      // Complaint status data
       {
         $addFields: {
           complain_status_data: {
             $switch: {
-              branches: [{
+              branches: [
+                {
                   case: {
                     $eq: ['$complain_status', 1]
                   },
@@ -509,65 +580,68 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       }
-    );
+    )
 
-    // Filter by latest complaint status
-    if (status !== undefined && status !== '') {
+    if (status !== '') {
       pipeline.push({
         $match: {
-          'latest_complain_user.complaint_status': String(status)
+          $expr: {
+            $eq: [
+              {
+                $toString: '$latest_complain_user.complaint_status'
+              },
+              String(status)
+            ]
+          }
         }
-      });
+      })
     }
 
     pipeline.push(
-      // Assigned user
       {
         $lookup: {
           from: 'users',
           localField: 'assigned_to.user',
           foreignField: '_id',
-          pipeline: [{
-            $project: {
-              _id: 1,
-              first_name: 1,
-              last_name: 1,
-              email: 1
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                first_name: 1,
+                last_name: 1,
+                email: 1,
+                phone: 1
+              }
             }
-          }],
+          ],
           as: 'assigned_user'
         }
-      }, {
+      },
+      {
         $unwind: {
           path: '$assigned_user',
           preserveNullAndEmptyArrays: true
         }
       },
-      // Put relation inside assigned_to.user
-
       {
         $addFields: {
-          'assigned_to.user': '$assigned_user'
+          assigned_user: '$assigned_user'
         }
       },
-
-      {
-        $project: {
-          assigned_user: 0,
-          complain_users: 0,
-          __v: 0
-        }
-      },
-
-      // Latest first
       {
         $sort: {
           created_at: -1
         }
+      },
+      {
+        $project: {
+          complain_users: 0,
+          __v: 0
+        }
       }
-    );
+    )
 
-    const complain = await Complain.aggregate(pipeline);
+    const complain = await Complain.aggregate(pipeline)
 
     const finalData = {
       compLen: complain.length,
@@ -575,17 +649,19 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       towers,
       floors,
       statusData,
+      priorityData,
       users,
       category: ticketType
-    };
+    }
 
     return successResponse(
       res,
       'Complain report data fetched successfully',
       finalData
-    );
+    )
   } catch (error) {
-    console.error('getComplainReportDataAPI error:', error);
-    next(error);
+    console.error('getComplainReportDataAPI error:', error)
+
+    next(error)
   }
-};
+}
