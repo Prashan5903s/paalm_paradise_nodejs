@@ -50,7 +50,7 @@ exports.getComplainController = async (req, res, next) => {
               $sort: {
                 created_at: -1,
                 _id: -1
-              } // oldest → latest
+              }
             }
           ],
           as: 'complain_users'
@@ -65,7 +65,6 @@ exports.getComplainController = async (req, res, next) => {
         }
       },
       {
-        // ✅ filter by the latest complain user’s complaint_status
         $match: {
           'latest_complain_user.complaint_status': status
         }
@@ -219,9 +218,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       priority = ''
     } = req.query
 
-    // ---------------------------------------------------------
-    // Master data
-    // ---------------------------------------------------------
     const [towers, floors, ticketType, users] = await Promise.all([
       Tower.find({
         created_by: userId,
@@ -253,9 +249,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
         .lean()
     ])
 
-    // ---------------------------------------------------------
-    // Status master data
-    // ---------------------------------------------------------
     const statusData = [
       {
         title: 'Pending',
@@ -275,9 +268,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
-    // ---------------------------------------------------------
-    // Priority master data
-    // ---------------------------------------------------------
     const priorityData = [
       {
         title: 'High',
@@ -293,26 +283,17 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     ]
 
-    // ---------------------------------------------------------
-    // Base match
-    // ---------------------------------------------------------
     const matchStage = {
       created_by: {
         $in: users.map(user => user._id)
       }
     }
 
-    // ---------------------------------------------------------
-    // Category filter
-    // ---------------------------------------------------------
     if (category && mongoose.Types.ObjectId.isValid(category)) {
       matchStage.category =
         mongoose.Types.ObjectId.createFromHexString(category)
     }
 
-    // ---------------------------------------------------------
-    // Nature filter
-    // ---------------------------------------------------------
     if (nature !== '') {
       const natureValue = Number(nature)
 
@@ -321,9 +302,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     }
 
-    // ---------------------------------------------------------
-    // Priority filter
-    // ---------------------------------------------------------
     if (priority !== '') {
       const priorityValue = String(priority)
 
@@ -349,17 +327,10 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     }
 
-    // ---------------------------------------------------------
-    // Assigned user filter
-    // ---------------------------------------------------------
     if (assignedTo && mongoose.Types.ObjectId.isValid(assignedTo)) {
       matchStage['assigned_to.user'] =
         mongoose.Types.ObjectId.createFromHexString(assignedTo)
     }
-
-    // ---------------------------------------------------------
-    // Pipeline
-    // ---------------------------------------------------------
 
     const pipeline = [
       {
@@ -431,12 +402,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
-    // ---------------------------------------------------------
-    // Floor Filter
-    //
-    // Filter complaint based on:
-    // created_by.apartment_data[].floor_id
-    // ---------------------------------------------------------
     if (floor && mongoose.Types.ObjectId.isValid(floor)) {
       pipeline.push({
         $match: {
@@ -473,9 +438,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
-    // ---------------------------------------------------------
-    // Resident search
-    // ---------------------------------------------------------
     if (resident && resident.trim() !== '') {
       const escapedResident = resident
         .trim()
@@ -526,13 +488,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
-    // ---------------------------------------------------------
-    // Remaining lookups
-    // ---------------------------------------------------------
     pipeline.push(
-      // -------------------------------------------------------
-      // Tower
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'towers',
@@ -556,10 +512,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // -------------------------------------------------------
-      // Floor
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'floors',
@@ -584,10 +536,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // -------------------------------------------------------
-      // Category
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'ticket_types',
@@ -611,10 +559,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // -------------------------------------------------------
-      // Complaint users
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'complain_users',
@@ -639,13 +583,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'complain_users'
         }
       },
-
-      // -------------------------------------------------------
-      // Latest complaint user
-      //
-      // Since complain_users is sorted DESC,
-      // index 0 is the latest record.
-      // -------------------------------------------------------
       {
         $addFields: {
           latest_complain_user: {
@@ -653,10 +590,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
-
-      // -------------------------------------------------------
-      // Nature data
-      // -------------------------------------------------------
       {
         $addFields: {
           nature_data: {
@@ -698,10 +631,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
-
-      // -------------------------------------------------------
-      // Complaint status data
-      // -------------------------------------------------------
       {
         $addFields: {
           complain_status_data: {
@@ -736,9 +665,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     )
 
-    // ---------------------------------------------------------
-    // Complaint status filter
-    // ---------------------------------------------------------
     if (status !== '') {
       pipeline.push({
         $match: {
@@ -754,13 +680,7 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       })
     }
 
-    // ---------------------------------------------------------
-    // Assigned user lookup + sorting + projection
-    // ---------------------------------------------------------
     pipeline.push(
-      // -------------------------------------------------------
-      // Assigned user
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'users',
@@ -780,29 +700,17 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'assigned_user'
         }
       },
-
-      // -------------------------------------------------------
-      // Unwind assigned user
-      // -------------------------------------------------------
       {
         $unwind: {
           path: '$assigned_user',
           preserveNullAndEmptyArrays: true
         }
       },
-
-      // -------------------------------------------------------
-      // Latest complaints first
-      // -------------------------------------------------------
       {
         $sort: {
           created_at: -1
         }
       },
-
-      // -------------------------------------------------------
-      // Final projection
-      // -------------------------------------------------------
       {
         $project: {
           complain_users: 0,
@@ -811,14 +719,8 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       }
     )
 
-    // ---------------------------------------------------------
-    // Execute aggregation
-    // ---------------------------------------------------------
     const complain = await Complain.aggregate(pipeline)
 
-    // ---------------------------------------------------------
-    // Final response
-    // ---------------------------------------------------------
     const finalData = {
       compLen: complain.length,
       complain,

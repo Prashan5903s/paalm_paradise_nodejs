@@ -21,6 +21,7 @@ const visitorTypeController = require('../controller/Company/VisitorTypeControll
 const reportController = require('../controller/Company/ReportController')
 const tenantController = require('../controller/Company/TenantAPIController')
 const panicAlertController = require('../controller/Company/PanicAlertAPIController')
+const slaConfigController = require('../controller/Company/SLAConfigController')
 
 const createUpload = require('../util/upload')
 
@@ -151,7 +152,11 @@ router.post(
   complainController.postComplainController
 )
 
-router.get("/complain/report/data", isAuth, complainController.getComplainReportDataAPI)
+router.get(
+  '/complain/report/data',
+  isAuth,
+  complainController.getComplainReportDataAPI
+)
 
 //This route is for dashboard
 router.get('/dashboard', isAuth, dashboardController.getDashboardDataAPI)
@@ -272,6 +277,18 @@ router.post(
   '/user/push/notification',
   isAuth,
   panicAlertController.postPanicController
+)
+
+//This is the router for sla config
+router.get(
+  '/sla/config/data',
+  isAuth,
+  slaConfigController.getSLAConfigController
+)
+router.post(
+  '/sla/post/data',
+  isAuth,
+  slaConfigController.postSLABreachController
 )
 
 module.exports = router

@@ -23,7 +23,7 @@ const port = process.env.PORT || 4000
 // Define public directory
 const publicDir = path.join(__dirname, 'public')
 const imageDir = path.join(publicDir, 'company_logo')
-    
+
 const dns = require('dns')
 
 dns.setServers(['0.0.0.0', '1.1.1.1'])
