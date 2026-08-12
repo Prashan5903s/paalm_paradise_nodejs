@@ -291,4 +291,11 @@ router.post(
   slaConfigController.postSLABreachController
 )
 
+//This is the route for sla report
+router.get(
+  '/sla/config/report',
+  isAuth,
+  reportController.getSLAReportController
+)
+
 module.exports = router
