@@ -298,4 +298,7 @@ router.get(
   reportController.getSLAReportController
 )
 
+//This is route for escalation
+router.get("/escalation/data", isAuth, complainController.getEscalatedComplainController)
+
 module.exports = router

@@ -4,11 +4,13 @@ const escalateComplainSchema = new mongoose.Schema(
   {
     complain_id: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true
+      required: true,
+      ref: 'complain'
     },
     resident_id: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true
+      required: true,
+      ref: 'users'
     },
     escalation_status_id: {
       type: mongoose.Schema.Types.ObjectId,

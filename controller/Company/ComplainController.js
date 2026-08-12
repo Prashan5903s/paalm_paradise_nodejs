@@ -3,6 +3,7 @@ const Complain = require('../../model/Complain')
 const User = require('../../model/User')
 const Tower = require('../../model/Tower')
 const Floor = require('../../model/Floor')
+const EscalateComplain = require('../../model/EscalateComplain')
 const TicketType = require('../../model/TicketType')
 const ComplainUser = require('../../model/ComplainUser')
 const { errorResponse, successResponse } = require('../../util/response')
@@ -740,6 +741,134 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
   } catch (error) {
     console.error('getComplainReportDataAPI error:', error)
 
+    next(error)
+  }
+}
+
+exports.getEscalatedComplainController = async (req, res, next) => {
+  try {
+    const userId = req?.userId
+
+    const users = await User.find({
+      created_by: userId
+    }).select('_id')
+
+    const userIds = users.map(u => u._id)
+
+    const escalateComplain = await EscalateComplain.aggregate([
+      {
+        $match: {
+          resident_id: {
+            $in: userIds.map(id => new mongoose.Types.ObjectId(id))
+          }
+        }
+      },
+
+      {
+        $lookup: {
+          from: 'complains',
+          localField: 'complain_id',
+          foreignField: '_id',
+          as: 'complain_id'
+        }
+      },
+      {
+        $unwind: {
+          path: '$complain_id',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'resident_id',
+          foreignField: '_id',
+          as: 'resident_id'
+        }
+      },
+      {
+        $unwind: {
+          path: '$resident_id',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      {
+        $lookup: {
+          from: 'app_config',
+          pipeline: [
+            {
+              $match: {
+                type: 'escalation_data'
+              }
+            }
+          ],
+          as: 'config'
+        }
+      },
+      {
+        $unwind: {
+          path: '$config',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+
+      {
+        $addFields: {
+          escalation_reason: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$config.escalation_data.escalation_reason_data',
+                  as: 'reason',
+                  cond: {
+                    $eq: [
+                      { $toString: '$$reason._id' },
+                      '$escalation_reason_id'
+                    ]
+                  }
+                }
+              },
+              0
+            ]
+          },
+          escalation_status: {
+            $arrayElemAt: [
+              {
+                $filter: {
+                  input: '$config.escalation_data.escalation_status_data',
+                  as: 'status',
+                  cond: {
+                    $eq: ['$$status._id', '$escalation_status_id']
+                  }
+                }
+              },
+              0
+            ]
+          }
+        }
+      },
+
+      {
+        $sort: {
+          created_at: -1
+        }
+      },
+
+      {
+        $project: {
+          config: 0
+        }
+      }
+    ])
+
+    return successResponse(
+      res,
+      'Escalated complain fetched successfully',
+      escalateComplain
+    )
+  } catch (error) {
     next(error)
   }
 }
