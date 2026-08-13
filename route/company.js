@@ -152,6 +152,13 @@ router.post(
   complainController.postComplainController
 )
 
+//This is the route for escalated complain
+router.post(
+  '/escalated/complain/data/:code',
+  isAuth,
+  complainController.postEscalatedComplainController
+)
+
 router.get(
   '/complain/report/data',
   isAuth,
@@ -299,6 +306,10 @@ router.get(
 )
 
 //This is route for escalation
-router.get("/escalation/data", isAuth, complainController.getEscalatedComplainController)
+router.get(
+  '/escalation/data',
+  isAuth,
+  complainController.getEscalatedComplainController
+)
 
 module.exports = router

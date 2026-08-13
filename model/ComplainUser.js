@@ -1,10 +1,15 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
 
 const complainUserSchema = new mongoose.Schema({
   complain_id: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
     ref: 'complain'
+  },
+
+  escalate_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: false
   },
 
   complaint_status: {
@@ -31,6 +36,6 @@ const complainUserSchema = new mongoose.Schema({
   updated_at: {
     type: Date
   }
-});
+})
 
-module.exports = mongoose.model('complain_user', complainUserSchema);
+module.exports = mongoose.model('complain_user', complainUserSchema)

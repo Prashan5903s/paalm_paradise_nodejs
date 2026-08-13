@@ -62,6 +62,20 @@ const complainSchema = new mongoose.Schema({
       maxLength: 5000
     }
   },
+  escalated_assigned_to: {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'users'
+    },
+    remark: {
+      type: String,
+      maxLength: 5000
+    },
+    escalate_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      required: false
+    }
+  },
 
   created_at: {
     type: Date,

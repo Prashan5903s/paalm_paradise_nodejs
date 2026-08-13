@@ -9,6 +9,7 @@ const ComplainUser = require('../../model/ComplainUser')
 const { errorResponse, successResponse } = require('../../util/response')
 
 const mongoose = require('mongoose')
+const { pipeline } = require('nodemailer/lib/xoauth2')
 
 exports.getComplainController = async (req, res, next) => {
   try {
@@ -337,10 +338,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
       {
         $match: matchStage
       },
-
-      // -------------------------------------------------------
-      // Default null/missing priority to Low
-      // -------------------------------------------------------
       {
         $addFields: {
           priority: {
@@ -348,10 +345,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           }
         }
       },
-
-      // -------------------------------------------------------
-      // Created By User
-      // -------------------------------------------------------
       {
         $lookup: {
           from: 'users',
@@ -379,13 +372,30 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'created_by'
         }
       },
-
-      // -------------------------------------------------------
-      // Unwind created_by
-      // -------------------------------------------------------
       {
         $unwind: {
           path: '$created_by',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'complain_feedback_log',
+          localField: '_id',
+          foreignField: 'complain_id',
+          pipeline: [
+            {
+              $project: {
+                rating: 1
+              }
+            }
+          ],
+          as: 'feedbackLog'
+        }
+      },
+      {
+        $unwind: {
+          path: '$feedbackLog',
           preserveNullAndEmptyArrays: true
         }
       }
@@ -506,7 +516,6 @@ exports.getComplainReportDataAPI = async (req, res, next) => {
           as: 'tower'
         }
       },
-
       {
         $unwind: {
           path: '$tower',
@@ -769,12 +778,12 @@ exports.getEscalatedComplainController = async (req, res, next) => {
           from: 'complains',
           localField: 'complain_id',
           foreignField: '_id',
-          as: 'complain_id'
+          as: 'complains'
         }
       },
       {
         $unwind: {
-          path: '$complain_id',
+          path: '$complains',
           preserveNullAndEmptyArrays: true
         }
       },
@@ -784,16 +793,73 @@ exports.getEscalatedComplainController = async (req, res, next) => {
           from: 'users',
           localField: 'resident_id',
           foreignField: '_id',
-          as: 'resident_id'
+          pipeline: [
+            {
+              $project: {
+                _id: 1,
+                first_name: 1,
+                last_name: 1,
+                phone: 1
+              }
+            }
+          ],
+          as: 'resident'
         }
       },
       {
         $unwind: {
-          path: '$resident_id',
+          path: '$resident',
           preserveNullAndEmptyArrays: true
         }
       },
 
+      {
+        $lookup: {
+          from: 'complain_users',
+          localField: 'complain_id',
+          foreignField: 'complain_id',
+          pipeline: [
+            {
+              $sort: {
+                created_at: -1
+              }
+            }
+          ],
+          as: 'all_complain_users'
+        }
+      },
+      {
+        $lookup: {
+          from: 'complain_users',
+          let: {
+            complainId: '$complain_id'
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $eq: ['$complain_id', '$$complainId']
+                }
+              }
+            },
+            {
+              $sort: {
+                created_at: -1,
+                _id: -1
+              }
+            }
+          ],
+          as: 'complain_users'
+        }
+      },
+      {
+        $addFields: {
+          all_complain_users: '$complain_users',
+          latest_complain_user: {
+            $last: '$complain_users'
+          }
+        }
+      },
       {
         $lookup: {
           from: 'app_config',
@@ -868,6 +934,76 @@ exports.getEscalatedComplainController = async (req, res, next) => {
       'Escalated complain fetched successfully',
       escalateComplain
     )
+  } catch (error) {
+    next(error)
+  }
+}
+
+exports.postEscalatedComplainController = async (req, res, next) => {
+  try {
+    const userId = req.userId
+
+    const code = req.params.code
+
+    const { status, user, remark, complainId, escalateId } = req.body
+
+    const complain = await Complain.findById(complainId)
+
+    if (!complain) {
+      return errorResponse(res, 'Complain does not exist', {}, 404)
+    }
+
+    if (code == 1) {
+      await Complain.findByIdAndUpdate(complainId, {
+        escalated_assigned_to: {
+          user,
+          remark,
+          escalate_id: escalateId
+        }
+      })
+
+      const complain_user = await ComplainUser.findOne({
+        complain_id: complainId,
+        escalate_id: escalateId
+      })
+
+      if (!complain_user) {
+        const complainUser = new ComplainUser({
+          complain_id: complainId,
+          escalate_id: escalateId,
+          complaint_status: '2',
+          created_by: userId,
+          created_at: Date.now()
+        })
+
+        await complainUser.save()
+      } else {
+        const typeStatus = complain_user?.complaint_status
+
+        if (typeStatus != '2') {
+          const complainUser = new ComplainUser({
+            complain_id: complainId,
+            complaint_status: '2',
+            created_by: userId,
+            created_at: Date.now()
+          })
+
+          await complainUser.save()
+        }
+      }
+    } else {
+      const complainUser = new ComplainUser({
+        complain_id: complainId,
+        complaint_status: status,
+        created_by: userId,
+        remark,
+        created_at: Date.now()
+      })
+
+      await complainUser.save()
+    }
+
+    return successResponse(res, 'Complain updated successfully')
   } catch (error) {
     next(error)
   }
