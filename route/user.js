@@ -17,11 +17,8 @@ const profileController = require('../controller/User/profileAPIController')
 const authController = require('../controller/User/AuthController')
 const termsPolicyController = require('../controller/User/TermsPolicyController')
 const panicController = require('../controller/User/PanicAPIController')
-
 const alertController = require('../controller/User/AlertAPIController')
-
 const visitorValidation = require('../validation/VisitorController')
-
 const escalationController = require('../controller/User/EscalationAPIController')
 
 const createUpload = require('../util/upload')
@@ -200,5 +197,8 @@ router.post(
   isAuth,
   escalationController.postEscalateAPIController
 )
+
+//This is the route for review feedback
+router.post('/review/feedback/data', isAuth, ComplainController.postReviewFeedBackController)
 
 module.exports = router

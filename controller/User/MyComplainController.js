@@ -3,6 +3,7 @@ const Complain = require('../../model/Complain')
 const TicketType = require('../../model/TicketType')
 const User = require('../../model/User')
 const ComplainUser = require('../../model/ComplainUser')
+const ReviewComplain = require('../../model/ReviewComplain')
 const { errorResponse, successResponse } = require('../../util/response')
 
 function generateSixDigitCode () {
@@ -93,6 +94,20 @@ exports.getMyComplainController = async (req, res, next) => {
       {
         $unwind: {
           path: '$category',
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: 'complain_feedback_log',
+          localField: '_id',
+          foreignField: 'complain_id',
+          as: 'feedbackLog'
+        }
+      },
+      {
+        $unwind: {
+          path: '$feedbackLog',
           preserveNullAndEmptyArrays: true
         }
       }
@@ -286,6 +301,30 @@ exports.deleteComplainController = async (req, res, next) => {
     })
 
     return successResponse(res, 'Complain deleted successfully')
+  } catch (error) {
+    next(error)
+  }
+}
+
+exports.postReviewFeedBackController = async (req, res, next) => {
+  try {
+    const userId = req?.userId
+
+    const { rating, is_satisfied, feedback, complainId, reopen_request } =
+      req?.body
+
+    await ReviewComplain.create({
+      complain_id: complainId,
+      user_id: userId,
+      rating,
+      is_satisfied,
+      feedback,
+      is_open: reopen_request,
+      created_by: userId,
+      created_at: Date.now()
+    })
+
+    return successResponse(res, 'Review feedback has been saved successfully')
   } catch (error) {
     next(error)
   }
