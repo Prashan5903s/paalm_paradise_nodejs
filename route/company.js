@@ -24,6 +24,7 @@ const panicAlertController = require('../controller/Company/PanicAlertAPIControl
 const slaConfigController = require('../controller/Company/SLAConfigController')
 
 const createUpload = require('../util/upload')
+const amenityController = require('../controller/Company/AmenityAPIController')
 
 const activityUpload = createUpload(
   [
@@ -310,6 +311,45 @@ router.get(
   '/escalation/data',
   isAuth,
   complainController.getEscalatedComplainController
+)
+
+//This is the route for amenities
+router.get(
+  '/amenity/fetch/data',
+  isAuth,
+  amenityController.getAmenityAPIController
+)
+router.post(
+  '/amenity/post/data',
+  isAuth,
+  amenityController.postAmenityAPIController
+)
+router.put(
+  '/amenity/put/data/:id',
+  isAuth,
+  amenityController.putAmenityAPIController
+)
+
+//This is the route for amenity booking
+router.get(
+  '/amenity/booking/list',
+  isAuth,
+  amenityController.getAmenityBookingListController
+)
+router.get(
+  '/amenity/booking/create',
+  isAuth,
+  amenityController.getCreateAmenityBookingController
+)
+router.post(
+  '/amenity/booking/data/store',
+  isAuth,
+  amenityController.postAmenityBookingController
+)
+router.put(
+  '/amenity/booking/data/update/:id',
+  isAuth,
+  amenityController.putAmenityBookingController
 )
 
 module.exports = router
