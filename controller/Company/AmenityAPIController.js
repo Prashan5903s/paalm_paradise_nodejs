@@ -29,7 +29,8 @@ exports.postAmenityAPIController = async (req, res, next) => {
       end_time,
       multiple_bookings,
       persons_allowed,
-      start_time
+      start_time,
+      time_diffrence
     } = req?.body
 
     await Amenity.create({
@@ -38,6 +39,7 @@ exports.postAmenityAPIController = async (req, res, next) => {
       is_booking_required: booking_required,
       is_multiple_booking_allowed: multiple_bookings,
       no_of_person: persons_allowed,
+      time_diffrence,
       start_time,
       end_time,
       created_by: userId,
@@ -63,6 +65,7 @@ exports.putAmenityAPIController = async (req, res, next) => {
       end_time,
       multiple_bookings,
       persons_allowed,
+      time_diffrence,
       start_time
     } = req?.body
 
@@ -81,6 +84,7 @@ exports.putAmenityAPIController = async (req, res, next) => {
         title: amenity_name,
         status: amenity_status,
         is_booking_required: booking_required,
+        time_diffrence,
         is_multiple_booking_allowed: multiple_bookings,
         no_of_person: persons_allowed,
         start_time,
@@ -126,7 +130,7 @@ exports.getCreateAmenityBookingController = async (req, res, next) => {
     const amenity = await Amenity.find({
       created_by: userId
     }).select(
-      'title start_time end_time is_multiple_booking_allowed no_of_person'
+      'title start_time end_time is_multiple_booking_allowed no_of_person time_diffrence'
     )
 
     const users = await User.find({

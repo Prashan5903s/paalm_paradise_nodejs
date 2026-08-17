@@ -27,6 +27,10 @@ const amenitySchema = new mongoose.Schema(
       maxlength: 10,
       required: false
     },
+    time_diffrence: {
+      type: Number,
+      required: true,
+    },
     is_multiple_booking_allowed: {
       type: Boolean,
       required: true,
