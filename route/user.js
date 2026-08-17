@@ -20,6 +20,7 @@ const panicController = require('../controller/User/PanicAPIController')
 const alertController = require('../controller/User/AlertAPIController')
 const visitorValidation = require('../validation/VisitorController')
 const escalationController = require('../controller/User/EscalationAPIController')
+const AmenityAPIController = require("../controller/User/AmenityAPIController")
 
 const createUpload = require('../util/upload')
 
@@ -200,5 +201,8 @@ router.post(
 
 //This is the route for review feedback
 router.post('/review/feedback/data', isAuth, ComplainController.postReviewFeedBackController)
+
+//This is the route for amenities
+router.get("/amenities/history", isAuth, AmenityAPIController.getAmenityAPIController)
 
 module.exports = router
