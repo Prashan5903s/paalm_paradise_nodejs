@@ -20,9 +20,10 @@ const panicController = require('../controller/User/PanicAPIController')
 const alertController = require('../controller/User/AlertAPIController')
 const visitorValidation = require('../validation/VisitorController')
 const escalationController = require('../controller/User/EscalationAPIController')
-const AmenityAPIController = require("../controller/User/AmenityAPIController")
+const AmenityAPIController = require('../controller/User/AmenityAPIController')
 
 const createUpload = require('../util/upload')
+const parcelController = require('../controller/User/ParcelAPIController')
 
 const { middleware: imageUpload } = createUpload(
   ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
@@ -200,9 +201,44 @@ router.post(
 )
 
 //This is the route for review feedback
-router.post('/review/feedback/data', isAuth, ComplainController.postReviewFeedBackController)
+router.post(
+  '/review/feedback/data',
+  isAuth,
+  ComplainController.postReviewFeedBackController
+)
 
 //This is the route for amenities
-router.get("/amenities/history", isAuth, AmenityAPIController.getAmenityAPIController)
+router.get(
+  '/amenities/history',
+  isAuth,
+  AmenityAPIController.getAmenityAPIController
+)
+
+// This is the route for parcel
+router.get('/parcel/data', isAuth, parcelController.getParcelAPIController)
+router.get(
+  '/parcel/create/data',
+  isAuth,
+  parcelController.getCreateAPIController
+)
+router.post(
+  '/parcel/post/data',
+  isAuth,
+  parcelController.postParcelAPIController
+)
+
+// Fixed: needs :id so req.params.id actually exists
+router.put(
+  '/parcel/:id/deliver',
+  isAuth,
+  parcelController.putParcelAPIController
+)
+
+// New: Leave at Gate now updates the DB instead of just local state
+router.put(
+  '/parcel/:id/leave-at-gate',
+  isAuth,
+  parcelController.leaveAtGateAPIController
+)
 
 module.exports = router
