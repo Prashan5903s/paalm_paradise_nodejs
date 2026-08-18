@@ -50,8 +50,6 @@ async function sendNotification (
   try {
     const response = await getMessaging().send(message)
 
-    console.log('✅ Notification sent successfully:', response)
-
     return {
       success: true,
       messageId: response
@@ -119,11 +117,6 @@ async function sendMultipleNotifications (
   try {
     const response = await getMessaging().sendEachForMulticast(message)
 
-    console.log('====================================')
-    console.log(`Total Tokens : ${validTokens.length}`)
-    console.log(`Success      : ${response.successCount}`)
-    console.log(`Failed       : ${response.failureCount}`)
-    console.log('====================================')
 
     return response
   } catch (error) {

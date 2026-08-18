@@ -73,8 +73,6 @@ exports.postPanicController = async (req, res, next) => {
     const { description, notification_type_id, title, user_id, user_type_id } =
       req.body
 
-    console.log(Array.isArray(user_id), user_id)
-
     await Promise.all(
       user_id.map(async u => {
         try {

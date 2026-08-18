@@ -2,6 +2,11 @@ const mongoose = require('mongoose')
 
 const parcelSchema = new mongoose.Schema(
   {
+    product_name: {
+      type: String,
+      maxlength: 255,
+      required: true
+    },
     floor_id: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -19,6 +24,7 @@ const parcelSchema = new mongoose.Schema(
     },
     trackingNumber: {
       type: String,
+      required: true,
       default: null
     },
     notes: {
@@ -28,7 +34,8 @@ const parcelSchema = new mongoose.Schema(
     },
     otp: {
       type: String,
-      required: true
+      required: true,
+      unique: true
     },
     status: {
       type: String,
@@ -49,5 +56,19 @@ const parcelSchema = new mongoose.Schema(
   },
   { timestamps: true, collection: 'parcels' }
 )
+
+parcelSchema.virtual('parcel_log', {
+  ref: 'parcel_log',
+  localField: '_id',
+  foreignField: 'parcelId',
+  options: { sort: { createdAt: -1 }, limit: 1 }
+})
+
+parcelSchema.set('toObject', {
+  virtuals: true
+})
+parcelSchema.set('toJSON', {
+  virtuals: true
+})
 
 module.exports = mongoose.model('parcel', parcelSchema)

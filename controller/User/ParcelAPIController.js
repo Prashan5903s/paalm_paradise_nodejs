@@ -2,7 +2,9 @@ const User = require('../../model/User')
 const Floor = require('../../model/Floor')
 const Parcel = require('../../model/Parcel')
 const ParcelLog = require('../../model/ParcelLog')
-const { successResponse } = require('../../util/response')
+const { successResponse, errorResponse } = require('../../util/response')
+const UserPushNotification = require('../../model/UserPushNotify')
+const { sendNotification } = require('../../util/sendPushNotification')
 
 exports.getParcelAPIController = async (req, res, next) => {
   try {
@@ -83,20 +85,35 @@ exports.postParcelAPIController = async (req, res, next) => {
   try {
     const userId = req.userId
 
-    const { floor_id, resident_id, courier_company, trackingNumber, notes } =
-      req.body
+    const {
+      floor_id,
+      resident_id,
+      courier_company,
+      tracking_number,
+      notes,
+      product_name
+    } = req.body
 
-    if (!floor_id || !resident_id || !courier_company) {
+    if (
+      !floor_id ||
+      !resident_id ||
+      !courier_company ||
+      !product_name ||
+      !tracking_number
+    ) {
       throw new Error('Missing required fields')
     }
+
+    const user = await User.findById(resident_id)
 
     const otp = Math.floor(1000 + Math.random() * 9000).toString()
 
     const parcel = await Parcel.create({
       floor_id,
+      product_name,
       resident_id,
       courier_company_id: courier_company,
-      trackingNumber,
+      trackingNumber: tracking_number,
       notes,
       otp,
       securityGuardId: userId
@@ -113,6 +130,29 @@ exports.postParcelAPIController = async (req, res, next) => {
       performedBy: userId,
       details: 'Parcel received at security gate'
     })
+
+    await sendNotification(
+      user.fcm_token,
+      'Parcel Received',
+      `Your parcel ${product_name} has been received and is ready for collection. Please visit the reception at your convenience.`,
+      String(resident_id),
+      'high'
+    )
+
+    const userNotifyPush = new UserPushNotification({
+      user_id: user._id,
+      fcm_token: user.fcm_token,
+      screen: 'panic_alert', // Change if you have a parcel screen
+      priority: 'high',
+      title: 'Parcel Received',
+      description: `Your parcel ${product_name} has been  received and is ready for collection. Please visit the reception at your convenience.`,
+      notification_type_id: '6a59dad036aa96e6ba56a80b',
+      user_type_id: '68cd0e38c2d476bd45384234',
+      created_by: userId,
+      created_at: new Date()
+    })
+
+    await userNotifyPush.save()
 
     return successResponse(res, 'Parcel logged successfully', populatedParcel)
   } catch (err) {
@@ -196,5 +236,26 @@ exports.leaveAtGateAPIController = async (req, res, next) => {
     )
   } catch (err) {
     next(err)
+  }
+}
+
+exports.getResidentParcelInfo = async (req, res, next) => {
+  try {
+    const userId = req?.userId
+
+    const parcelData = await Parcel.find({
+      resident_id: userId
+    })
+      .sort({ createdAt: -1 })
+      .populate('parcel_log')
+      .populate('securityGuardId')
+
+    if (!parcelData) {
+      return errorResponse(res, 'Parcel does not exist', {}, 404)
+    }
+
+    return successResponse(res, 'Parcel data recieved successfully', parcelData)
+  } catch (error) {
+    next(error)
   }
 }

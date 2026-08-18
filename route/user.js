@@ -241,4 +241,11 @@ router.put(
   parcelController.leaveAtGateAPIController
 )
 
+//This is the route for resident parcel log
+router.get(
+  '/parcel/resident/log',
+  isAuth,
+  parcelController.getResidentParcelInfo
+)
+
 module.exports = router
