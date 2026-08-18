@@ -22,6 +22,9 @@ const reportController = require('../controller/Company/ReportController')
 const tenantController = require('../controller/Company/TenantAPIController')
 const panicAlertController = require('../controller/Company/PanicAlertAPIController')
 const slaConfigController = require('../controller/Company/SLAConfigController')
+const vendorController = require('../controller/Company/VendorAPIController')
+const locationCategoryController = require('../controller/Company/LocationCategoryController')
+const assetController = require('../controller/Company/AssetAPIController')
 
 const createUpload = require('../util/upload')
 const amenityController = require('../controller/Company/AmenityAPIController')
@@ -351,5 +354,48 @@ router.put(
   isAuth,
   amenityController.putAmenityBookingController
 )
+
+//This is the route for vendor
+router.get('/vendor/log/data', isAuth, vendorController.getVendorAPIController)
+router.post(
+  '/vendor/post/data',
+  isAuth,
+  vendorController.postVendorAPIController
+)
+router.put(
+  '/vendor/update/data/:id',
+  isAuth,
+  vendorController.putVendorAPIController
+)
+
+//This is the route for category controller
+router.get(
+  '/location-category/log/data',
+  isAuth,
+  locationCategoryController.getLocationCategoryController
+)
+router.post(
+  '/asset/category/post/data',
+  isAuth,
+  locationCategoryController.postCategoryController
+)
+router.put(
+  '/asset/category/put/data/:id',
+  isAuth,
+  locationCategoryController.putCategoryController
+)
+
+router.post(
+  '/asset/location/post/data',
+  isAuth,
+  locationCategoryController.postLocationController
+)
+router.put(
+  '/asset/location/put/data/:id',
+  isAuth,
+  locationCategoryController.putLocationController
+)
+
+router.get('/asset/fetch/data', isAuth, assetController?.getAssetAPIController)
 
 module.exports = router
