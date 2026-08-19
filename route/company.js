@@ -25,7 +25,8 @@ const slaConfigController = require('../controller/Company/SLAConfigController')
 const vendorController = require('../controller/Company/VendorAPIController')
 const locationCategoryController = require('../controller/Company/LocationCategoryController')
 const assetController = require('../controller/Company/AssetAPIController')
-const amcAPIController = require("../controller/Company/AMCAPIController")
+const amcAPIController = require('../controller/Company/AMCAPIController')
+const inspectionController = require('../controller/Company/InspectionAPIController')
 
 const createUpload = require('../util/upload')
 const amenityController = require('../controller/Company/AmenityAPIController')
@@ -408,8 +409,25 @@ router.put(
 )
 
 //THis is the route for amc
-router.get("/amc/fetch/data", isAuth, amcAPIController.getAMCAPIController)
-router.post("/amc/save/data", isAuth, amcAPIController.postAMCController)
-router.put("/amc/update/data/:id", isAuth, amcAPIController.putAMCController)
+router.get('/amc/fetch/data', isAuth, amcAPIController.getAMCAPIController)
+router.post('/amc/save/data', isAuth, amcAPIController.postAMCController)
+router.put('/amc/update/data/:id', isAuth, amcAPIController.putAMCController)
+
+//This route is for inspection template
+router.get(
+  '/inspection/template/data',
+  isAuth,
+  inspectionController.getInpectionTemplateData
+)
+router.post(
+  '/inspection/template/save/data',
+  isAuth,
+  inspectionController.postInspectionTemplateController
+)
+router.put(
+  '/inspection/template/update/data/:id',
+  isAuth,
+  inspectionController.putInspectionTemplateController
+)
 
 module.exports = router

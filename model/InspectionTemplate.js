@@ -5,7 +5,7 @@ const InspectionTemplateSchema = new mongoose.Schema(
     name: String,
     category: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'asset_Category'
+      ref: 'asset_category'
     },
     checklist: [
       {
