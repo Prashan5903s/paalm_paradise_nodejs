@@ -4,10 +4,12 @@ const assetSchema = new mongoose.Schema(
   {
     vendor_id: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
       ref: 'vendor'
     },
     location_id: {
       type: mongoose.Schema.Types.ObjectId,
+      required: true,
       ref: 'asset_location'
     },
     asset_category_id: {
@@ -31,21 +33,17 @@ const assetSchema = new mongoose.Schema(
     purchase_cost: Number,
     warranty_start: Date,
     warranty_end: Date,
-    qr_code: String,
-    bar_code: String,
     status: {
       type: String,
-      enum: ['Active', 'Inactive', 'Under Maintenance', 'Disposed'],
+      enum: ['1', '2', '3', '4'],
       default: 'Active'
     },
     condition: {
       type: String,
-      enum: ['Excellent', 'Good', 'Fair', 'Poor'],
+      enum: ['1', '2', '3', '4'],
       default: 'Good'
     },
     depreciationValue: Number,
-    images: [String],
-    documents: [String],
     description: String,
     assigned_to: {
       type: mongoose.Schema.Types.ObjectId,

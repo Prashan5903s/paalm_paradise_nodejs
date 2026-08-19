@@ -17,11 +17,11 @@ const AMCSchema = new mongoose.Schema(
     amount: Number,
     service_frequency: {
       type: String,
-      enum: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly']
+      enum: ['1', '2', '3', '4']
     },
     status: {
       type: String,
-      enum: ['Active', 'Expired', 'Renewed'],
+      enum: ['1', '2', '3'],
       default: 'Active'
     },
     documents: [String],

@@ -25,6 +25,7 @@ const slaConfigController = require('../controller/Company/SLAConfigController')
 const vendorController = require('../controller/Company/VendorAPIController')
 const locationCategoryController = require('../controller/Company/LocationCategoryController')
 const assetController = require('../controller/Company/AssetAPIController')
+const amcAPIController = require("../controller/Company/AMCAPIController")
 
 const createUpload = require('../util/upload')
 const amenityController = require('../controller/Company/AmenityAPIController')
@@ -385,6 +386,7 @@ router.put(
   locationCategoryController.putCategoryController
 )
 
+//This is the route for asset location
 router.post(
   '/asset/location/post/data',
   isAuth,
@@ -396,6 +398,18 @@ router.put(
   locationCategoryController.putLocationController
 )
 
+//This is the route for asset
 router.get('/asset/fetch/data', isAuth, assetController?.getAssetAPIController)
+router.post('/asset/save/data', isAuth, assetController.postAssetAPIController)
+router.put(
+  '/asset/update/data/:id',
+  isAuth,
+  assetController.putAssetAPIController
+)
+
+//THis is the route for amc
+router.get("/amc/fetch/data", isAuth, amcAPIController.getAMCAPIController)
+router.post("/amc/save/data", isAuth, amcAPIController.postAMCController)
+router.put("/amc/update/data/:id", isAuth, amcAPIController.putAMCController)
 
 module.exports = router
