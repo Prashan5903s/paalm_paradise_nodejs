@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
 const User = require('../../model/User')
+const Asset = require('../../model/Assets')
 const { successResponse } = require('../../util/response')
 const AssetCategory = require('../../model/AssetCategory')
 const InspectionSchedule = require('../../model/InspectionSchedule')
@@ -9,6 +10,10 @@ exports.getInspectionScheduleAPI = async (req, res, next) => {
   try {
     const userId = req?.userId
 
+    const asset = await Asset.find({
+      created_by: userId
+    }).select('_id name')
+
     const inspectionTemplate = await InspectionTemplate.find({
       created_by: userId
     }).select('_id name')
@@ -16,8 +21,9 @@ exports.getInspectionScheduleAPI = async (req, res, next) => {
     const inspectionSchedule = await InspectionSchedule.find({
       assigned_by: userId
     })
-      .populate('inspection_template_id', "_id name")
-      .populate('assigned_to', "_id first_name last_name phone")
+      .populate('inspection_template_id', '_id name')
+      .populate('assigned_to', '_id first_name last_name phone')
+      .populate('asset_id', '_id name')
 
     const users = await User.aggregate([
       {
@@ -62,7 +68,8 @@ exports.getInspectionScheduleAPI = async (req, res, next) => {
     const finalData = {
       inspectionTemplate,
       inspectionSchedule,
-      users
+      users,
+      asset
     }
 
     return successResponse(
@@ -80,6 +87,7 @@ exports.postInspectionScheduleController = async (req, res, next) => {
     const userId = req?.userId
 
     const {
+      asset_id,
       assigned_to,
       due_date,
       frequency,
@@ -91,6 +99,7 @@ exports.postInspectionScheduleController = async (req, res, next) => {
 
     await InspectionSchedule.create({
       assigned_to,
+      asset_id,
       assigned_by: userId,
       remarks,
       scheduled_date,
@@ -113,6 +122,7 @@ exports.putInspectionScheduleController = async (req, res, next) => {
     const { id } = req?.params
 
     const {
+      asset_id,
       assigned_to,
       due_date,
       frequency,
@@ -128,6 +138,7 @@ exports.putInspectionScheduleController = async (req, res, next) => {
         _id: id
       },
       {
+        asset_id,
         assigned_to,
         remarks,
         scheduled_date,

@@ -21,6 +21,7 @@ const alertController = require('../controller/User/AlertAPIController')
 const visitorValidation = require('../validation/VisitorController')
 const escalationController = require('../controller/User/EscalationAPIController')
 const AmenityAPIController = require('../controller/User/AmenityAPIController')
+const InspectionResultController = require('../controller/User/InspectionResultAPIController')
 
 const createUpload = require('../util/upload')
 const parcelController = require('../controller/User/ParcelAPIController')
@@ -246,6 +247,18 @@ router.get(
   '/parcel/resident/log',
   isAuth,
   parcelController.getResidentParcelInfo
+)
+
+//This is the route for inspection result
+router.get(
+  '/inspection/result/data',
+  isAuth,
+  InspectionResultController.getInspectionResultAPI
+)
+router.post(
+  '/inspection/save/data',
+  isAuth,
+  InspectionResultController.postInspectionResultAPI
 )
 
 module.exports = router

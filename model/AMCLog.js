@@ -22,7 +22,7 @@ const AMCSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['1', '2', '3'],
-      default: 'Active'
+      default: '1'
     },
     documents: [String],
     created_by: {

@@ -2,6 +2,11 @@ const mongoose = require('mongoose')
 
 const InspectionScheduleSchema = new mongoose.Schema(
   {
+    asset_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'assets',
+      required: true
+    },
     inspection_template_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'inspection_template',
@@ -19,15 +24,7 @@ const InspectionScheduleSchema = new mongoose.Schema(
     },
     frequency: {
       type: String,
-      enum: [
-        '7',
-        '1',
-        '2',
-        "3",
-        '4',
-        '5',
-        '6'
-      ],
+      enum: ['7', '1', '2', '3', '4', '5', '6'],
       default: 'One Time'
     },
     scheduled_date: {

@@ -2,13 +2,23 @@ const mongoose = require('mongoose')
 
 const WorkOrderSchema = new mongoose.Schema(
   {
-    work_order_no: {
-      type: String,
-      unique: true
-    },
     asset_id: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'assets'
+    },
+    amc_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'amc_log',
+      default: null
+    },
+    inspection_result_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'inspection_result',
+      default: null
+    },
+    work_order_no: {
+      type: String,
+      unique: true
     },
     type: {
       type: String,

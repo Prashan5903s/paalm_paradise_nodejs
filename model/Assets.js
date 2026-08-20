@@ -36,18 +36,18 @@ const assetSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ['1', '2', '3', '4'],
-      default: 'Active'
+      default: '1'
     },
     condition: {
       type: String,
       enum: ['1', '2', '3', '4'],
-      default: 'Good'
+      default: '1'
     },
     depreciationValue: Number,
     description: String,
     assigned_to: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User'
+      ref: 'users'
     },
     created_by: {
       type: mongoose.Schema.Types.ObjectId,

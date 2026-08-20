@@ -10,6 +10,11 @@ const InspectionSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'inspection_template'
     },
+    inspection_schedule_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'inspection_schedule',
+      required: true
+    },
     inspected_by: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'users'
