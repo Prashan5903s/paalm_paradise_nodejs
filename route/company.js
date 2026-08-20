@@ -27,6 +27,7 @@ const locationCategoryController = require('../controller/Company/LocationCatego
 const assetController = require('../controller/Company/AssetAPIController')
 const amcAPIController = require('../controller/Company/AMCAPIController')
 const inspectionController = require('../controller/Company/InspectionAPIController')
+const inspectionScheduleController = require('../controller/Company/InspectionScheduleAPIController')
 
 const createUpload = require('../util/upload')
 const amenityController = require('../controller/Company/AmenityAPIController')
@@ -428,6 +429,23 @@ router.put(
   '/inspection/template/update/data/:id',
   isAuth,
   inspectionController.putInspectionTemplateController
+)
+
+//This is the route for inspection
+router.get(
+  '/inspection-schedule/fetch/data',
+  isAuth,
+  inspectionScheduleController.getInspectionScheduleAPI
+)
+router.post(
+  '/inspection-schedule/save',
+  isAuth,
+  inspectionScheduleController.postInspectionScheduleController
+)
+router.put(
+  '/inspection-schedule/update/:id',
+  isAuth,
+  inspectionScheduleController.putInspectionScheduleController
 )
 
 module.exports = router
