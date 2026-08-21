@@ -8,7 +8,7 @@ exports.getInpectionTemplateData = async (req, res, next) => {
 
     const inspectionTemplate = await InspectionTemplate.find({
       created_by: userId
-    })
+    }).populate('category')
 
     const assetCategory = await AssetCategory.find({
       created_by: userId
