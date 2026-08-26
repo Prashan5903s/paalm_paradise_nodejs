@@ -86,6 +86,11 @@ exports.getComplainController = async (req, res, next) => {
         }
       },
       {
+        $sort: {
+          created_at: -1
+        }
+      },
+      {
         $project: {
           complain_users: 0 // hide full complain_users array
         }

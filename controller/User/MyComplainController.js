@@ -110,6 +110,11 @@ exports.getMyComplainController = async (req, res, next) => {
           path: '$feedbackLog',
           preserveNullAndEmptyArrays: true
         }
+      },
+      {
+        $sort: {
+          _id: -1
+        }
       }
     ])
 
@@ -271,6 +276,7 @@ exports.postComplainController = async (req, res, next) => {
       description,
       priority,
       category: category,
+      complain_img: req.file ? req.file?.filename : null,
       created_by: userId
     })
 

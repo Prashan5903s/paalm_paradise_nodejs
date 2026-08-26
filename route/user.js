@@ -22,13 +22,18 @@ const visitorValidation = require('../validation/VisitorController')
 const escalationController = require('../controller/User/EscalationAPIController')
 const AmenityAPIController = require('../controller/User/AmenityAPIController')
 const InspectionResultController = require('../controller/User/InspectionResultAPIController')
+const parcelController = require('../controller/User/ParcelAPIController')
 
 const createUpload = require('../util/upload')
-const parcelController = require('../controller/User/ParcelAPIController')
 
 const { middleware: imageUpload } = createUpload(
   ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
   'uploads/images' // directory inside /public/
+)
+
+const { middleware: imageComplainUpload } = createUpload(
+  ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
+  'uploads/complain' // directory inside /public/
 )
 
 const { middleware: imageVisitorUpload } = createUpload(
@@ -60,7 +65,13 @@ router.get(
   ComplainController.getMyComplainFilterController
 )
 
-router.post('/my-complain', isAuth, ComplainController.postComplainController)
+router.post(
+  '/my-complain',
+  isAuth,
+  imageComplainUpload('complain_img'),
+  ComplainController.postComplainController
+)
+
 router.get(
   '/my-complain/data/create',
   isAuth,

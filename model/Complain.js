@@ -23,6 +23,11 @@ const complainSchema = new mongoose.Schema({
     required: true
   },
 
+  complain_img: {
+    type: String,
+    required: false
+  },
+
   description: {
     type: String,
     required: true,

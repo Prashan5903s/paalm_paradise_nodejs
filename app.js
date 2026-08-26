@@ -35,6 +35,12 @@ if (!fs.existsSync(imageDir)) {
   })
 }
 
+const uploadDir = './public/uploads/complain'
+
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true })
+}
+
 // Middleware
 app.use(
   cors({
