@@ -997,6 +997,7 @@ exports.postEscalatedComplainController = async (req, res, next) => {
         }
       }
     } else {
+      
       const complainUser = new ComplainUser({
         complain_id: complainId,
         complaint_status: status,

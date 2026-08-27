@@ -247,8 +247,9 @@ exports.getResidentParcelInfo = async (req, res, next) => {
       resident_id: userId
     })
       .sort({ createdAt: -1 })
-      .populate('parcel_log')
-      .populate('securityGuardId')
+      .select("product_name trackingNumber notes otp status gateStation createdAt deliveredAt courier_company_id")
+      .populate('parcel_log', 'details action timestamp ')
+      .populate('securityGuardId', 'first_name last_name phone')
 
     if (!parcelData) {
       return errorResponse(res, 'Parcel does not exist', {}, 404)
