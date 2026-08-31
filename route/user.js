@@ -26,6 +26,8 @@ const parcelController = require('../controller/User/ParcelAPIController')
 
 const createUpload = require('../util/upload')
 
+const parcelValidation = require("../validation/ParcelValidation")
+
 const { middleware: imageUpload } = createUpload(
   ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
   'uploads/images' // directory inside /public/
@@ -236,6 +238,7 @@ router.get(
 router.post(
   '/parcel/post/data',
   isAuth,
+  parcelValidation.postParcelValidation,
   parcelController.postParcelAPIController
 )
 
