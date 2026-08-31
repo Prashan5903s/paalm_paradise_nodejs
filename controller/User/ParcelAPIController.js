@@ -4,6 +4,7 @@ const Parcel = require('../../model/Parcel')
 const ParcelLog = require('../../model/ParcelLog')
 const { successResponse, errorResponse } = require('../../util/response')
 const UserPushNotification = require('../../model/UserPushNotify')
+const validate = require('../../util/validation')
 const { sendNotification } = require('../../util/sendPushNotification')
 
 exports.getParcelAPIController = async (req, res, next) => {
@@ -83,6 +84,8 @@ exports.getCreateAPIController = async (req, res, next) => {
 
 exports.postParcelAPIController = async (req, res, next) => {
   try {
+    if (!validate(req, res)) return
+
     const userId = req.userId
 
     const {
@@ -247,7 +250,9 @@ exports.getResidentParcelInfo = async (req, res, next) => {
       resident_id: userId
     })
       .sort({ createdAt: -1 })
-      .select("product_name trackingNumber notes otp status gateStation createdAt deliveredAt courier_company_id")
+      .select(
+        'product_name trackingNumber notes otp status gateStation createdAt deliveredAt courier_company_id'
+      )
       .populate('parcel_log', 'details action timestamp ')
       .populate('securityGuardId', 'first_name last_name phone')
 
