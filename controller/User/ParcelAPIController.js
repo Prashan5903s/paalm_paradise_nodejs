@@ -170,13 +170,22 @@ exports.putParcelAPIController = async (req, res, next) => {
 
     const parcel = await Parcel.findById(req.params.id)
 
-    if (!parcel) throw new Error('Parcel not found')
-
-    if (parcel.status === '3') {
-      throw new Error('Parcel is already marked as delivered')
+    if (!parcel) {
+      return errorResponse(res, 'Parcel not found', {}, 404)
     }
 
-    if (parcel.otp !== otp) throw new Error('Invalid OTP')
+    if (parcel.status === '3') {
+      return errorResponse(
+        res,
+        'Parcel is already marked as delivered',
+        {},
+        400
+      )
+    }
+
+    if (parcel.otp !== otp) {
+      return errorResponse(res, 'Invalid OTP', {}, 400)
+    }
 
     parcel.status = '3'
     parcel.deliveredAt = new Date()
