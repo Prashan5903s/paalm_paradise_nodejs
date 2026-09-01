@@ -28,8 +28,10 @@ const assetController = require('../controller/Company/AssetAPIController')
 const amcAPIController = require('../controller/Company/AMCAPIController')
 const inspectionController = require('../controller/Company/InspectionAPIController')
 const inspectionScheduleController = require('../controller/Company/InspectionScheduleAPIController')
+const documentController = require('../controller/Company/DocumentAPIController')
 
 const createUpload = require('../util/upload')
+const createDocUpload = require('../util/uploadDocFile')
 const amenityController = require('../controller/Company/AmenityAPIController')
 
 const activityUpload = createUpload(
@@ -51,6 +53,28 @@ const activityUpload = createUpload(
     'video/mp4'
   ],
   'bills', // Folder inside /public
+  500 // Max size in MB
+)
+
+const documentUpload = createDocUpload(
+  [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/svg+xml',
+    'image/bmp',
+    'image/tiff',
+    'image/x-icon',
+    'application/pdf',
+    'application/zip',
+    'application/x-zip-compressed',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    'video/mp4'
+  ],
+  'documents', // Folder inside /public
   500 // Max size in MB
 )
 
@@ -446,6 +470,21 @@ router.put(
   '/inspection-schedule/update/:id',
   isAuth,
   inspectionScheduleController.putInspectionScheduleController
+)
+
+//This is the route for document
+router.get('/document/fetch/data', isAuth, documentController.getDocument)
+router.post(
+  '/document/save/data',
+  isAuth,
+  documentUpload.array('documents', 20), // 'documents' matches form payload key, max 20 files
+  documentController.postDocument
+)
+router.put(
+  '/document/update/data/:id',
+  isAuth,
+  documentUpload.array('documents', 20),
+  documentController.putDocument
 )
 
 module.exports = router
