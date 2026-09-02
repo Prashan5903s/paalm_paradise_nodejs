@@ -22,11 +22,12 @@ const visitorValidation = require('../validation/VisitorController')
 const escalationController = require('../controller/User/EscalationAPIController')
 const AmenityAPIController = require('../controller/User/AmenityAPIController')
 const InspectionResultController = require('../controller/User/InspectionResultAPIController')
+const DocumentAPIController = require('../controller/User/DocumentAPIController')
 const parcelController = require('../controller/User/ParcelAPIController')
 
 const createUpload = require('../util/upload')
 
-const parcelValidation = require("../validation/ParcelValidation")
+const parcelValidation = require('../validation/ParcelValidation')
 
 const { middleware: imageUpload } = createUpload(
   ['image/jpeg', 'image/png', 'image/jpg'], // allowed types
@@ -273,6 +274,13 @@ router.post(
   '/inspection/save/data',
   isAuth,
   InspectionResultController.postInspectionResultAPI
+)
+
+//This route is for document
+router.get(
+  '/document/user/data',
+  isAuth,
+  DocumentAPIController.getDocumentAPIController
 )
 
 module.exports = router
