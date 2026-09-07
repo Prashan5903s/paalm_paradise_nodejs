@@ -37,6 +37,7 @@ const updateApartmentStatus = async (idArray, userId) => {
             }
         });
 
+        
         // Step 2: Unassign apartments previously assigned to user but not in the new selection
         await Apartment.updateMany({
             assigned_to: userId,
