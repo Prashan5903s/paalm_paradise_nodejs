@@ -133,7 +133,8 @@ exports.postTenantAPIController = async (req, res, next) => {
         await roleUser.save();
 
         await Apartment.findByIdAndUpdate(apartment_id, {
-            tenant_assigned_to: tenant._id
+            tenant_assigned_to: tenant._id,
+            tenant_assigned_at: Date.now()
         })
 
         return successResponse(res, "Tenant added successfully")
@@ -198,13 +199,15 @@ exports.putTenantController = async (req, res, next) => {
             }
         }, {
             $set: {
-                tenant_assigned_to: null
+                tenant_assigned_to: null,
+                tenant_assigned_at: null
             }
         });
 
 
         await Apartment.findByIdAndUpdate(apartment_id, {
-            tenant_assigned_to: id
+            tenant_assigned_to: id,
+            tenant_assigned_at: Date.now()
         })
 
         await User.findOneAndUpdate({

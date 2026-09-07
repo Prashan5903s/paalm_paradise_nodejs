@@ -32,9 +32,19 @@ const apartmentSchema = new mongoose.Schema({
         required: false,
         default: null
     },
+    assigned_at: {
+        type: Date,
+        default: null,
+        required: false
+    },
     tenant_assigned_to: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "users",
+        required: false,
+        default: null
+    },
+    tenant_assigned_at: {
+        type: Date,
         required: false,
         default: null
     },

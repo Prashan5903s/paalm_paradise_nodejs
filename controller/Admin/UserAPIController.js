@@ -32,6 +32,7 @@ const updateApartmentStatus = async (idArray, userId) => {
         }, {
             $set: {
                 assigned_to: userId,
+                assigned_at: Date.now(),
                 status: true
             }
         });
@@ -45,6 +46,7 @@ const updateApartmentStatus = async (idArray, userId) => {
         }, {
             $set: {
                 assigned_to: null,
+                assigned_at: null,
                 status: false
             }
         });
@@ -357,7 +359,7 @@ exports.createUserAPI = async (req, res, next) => {
         const roles = Array.isArray(req.body.roles) ?
             req.body.roles :
             typeof req.body.roles === 'string' && req.body.roles.trim().length ?
-            req.body.roles.split(',').map(r => r.trim()) : [];
+                req.body.roles.split(',').map(r => r.trim()) : [];
 
         if (roles.length) {
             const roleDocs = await Role.find({
@@ -567,7 +569,7 @@ exports.updateUserAPI = async (req, res, next) => {
         const roles = Array.isArray(req.body.roles) ?
             req.body.roles :
             typeof req.body.roles === "string" && req.body.roles.trim().length ?
-            req.body.roles.split(",").map(r => r.trim()) : [];
+                req.body.roles.split(",").map(r => r.trim()) : [];
 
         await RoleUser.deleteMany({
             user_id: userId
@@ -779,6 +781,7 @@ exports.deleteAPI = async (req, res, next) => {
             assigned_to: user_id
         }, {
             status: false,
+            assigned_at: null,
             assigned_to: null
         })
 
