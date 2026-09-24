@@ -60,6 +60,23 @@ exports.getCreateAPIController = async (req, res, next) => {
     })
       .populate('tower_id')
       .select('tower_id floor_name status')
+      .lean();
+
+    floor.sort((a, b) => {
+      const towerCompare = (a.tower_id?.name || '').localeCompare(
+        b.tower_id?.name || '',
+        undefined,
+        { numeric: true, sensitivity: 'base' }
+      );
+
+      if (towerCompare !== 0) return towerCompare;
+
+      return (a.floor_name || '').localeCompare(
+        b.floor_name || '',
+        undefined,
+        { numeric: true, sensitivity: 'base' }
+      );
+    });
 
     const courierData = [
       { title: 'Amazon', value: '1' },
