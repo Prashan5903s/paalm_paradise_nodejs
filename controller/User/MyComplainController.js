@@ -135,7 +135,10 @@ exports.getMyComplainFilterController = async (req, res, next) => {
     const { status, start: startParam, end: endParam } = req.params;
 
     const matchCondition = {
-      created_by: new mongoose.Types.ObjectId(userId),
+      created_by:
+        userId instanceof mongoose.Types.ObjectId
+          ? userId
+          : new mongoose.Types.ObjectId(userId),
     };
 
     // Include the entire end date
