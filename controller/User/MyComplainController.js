@@ -6,7 +6,7 @@ const ComplainUser = require('../../model/ComplainUser')
 const ReviewComplain = require('../../model/ReviewComplain')
 const { errorResponse, successResponse } = require('../../util/response')
 
-function generateSixDigitCode () {
+function generateSixDigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
@@ -128,118 +128,134 @@ exports.getMyComplainController = async (req, res, next) => {
   }
 }
 
+
 exports.getMyComplainFilterController = async (req, res, next) => {
   try {
-    const userId = req.userId
-
-    const start = req?.params?.start ? new Date(req.params.start) : null
-    const end = req?.params?.end ? new Date(req.params.end) : null
-
-    const status = req?.params?.status
+    const userId = req.userId;
+    const { status, start: startParam, end: endParam } = req.params;
 
     const matchCondition = {
-      created_by: new mongoose.Types.ObjectId(userId)
-    }
+      created_by: new mongoose.Types.ObjectId(userId),
+    };
 
-    if (start && end) {
-      matchCondition.created_at = {
-        $gte: start,
-        $lte: end
+    // Include the entire end date
+    if (startParam || endParam) {
+      matchCondition.created_at = {};
+
+      if (startParam) {
+        const start = new Date(`${startParam}T00:00:00.000Z`);
+
+        if (isNaN(start.getTime())) {
+          return errorResponse(res, 'Invalid start date', {}, 400);
+        }
+
+        matchCondition.created_at.$gte = start;
       }
-    } else if (start) {
-      matchCondition.created_at = {
-        $gte: start
-      }
-    } else if (end) {
-      matchCondition.created_at = {
-        $lte: end
+
+      if (endParam) {
+        const end = new Date(`${endParam}T00:00:00.000Z`);
+
+        if (isNaN(end.getTime())) {
+          return errorResponse(res, 'Invalid end date', {}, 400);
+        }
+
+        // Exclusive next-day boundary
+        end.setUTCDate(end.getUTCDate() + 1);
+        matchCondition.created_at.$lt = end;
       }
     }
 
     const complains = await Complain.aggregate([
       {
-        $match: matchCondition
+        $match: matchCondition,
       },
       {
         $lookup: {
           from: 'complain_users',
-          let: {
-            complainId: '$_id'
-          },
+          let: { complainId: '$_id' },
           pipeline: [
             {
               $match: {
                 $expr: {
-                  $eq: ['$complain_id', '$$complainId']
-                }
-              }
+                  $eq: ['$complain_id', '$$complainId'],
+                },
+              },
             },
             {
               $sort: {
-                created_at: 1
-              } // oldest → latest
-            }
+                created_at: 1,
+                _id: 1,
+              },
+            },
           ],
-          as: 'complain_users'
-        }
+          as: 'complain_users',
+        },
       },
       {
         $addFields: {
           latest_complain_user: {
-            $last: '$complain_users'
-          }
-        }
+            $arrayElemAt: ['$complain_users', -1],
+          },
+        },
       },
       {
-        // ✅ filter by latest complain user’s complaint_status
         $match: {
-          'latest_complain_user.complaint_status': status
-        }
+          'latest_complain_user.complaint_status': status,
+        },
       },
       {
         $lookup: {
           from: 'ticket_types',
           localField: 'category',
           foreignField: '_id',
-          as: 'category'
-        }
+          as: 'category',
+        },
       },
       {
         $unwind: {
           path: '$category',
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $lookup: {
           from: 'users',
           localField: 'assigned_to.user',
           foreignField: '_id',
-          as: 'assigned_user'
-        }
+          as: 'assigned_user',
+        },
       },
       {
         $unwind: {
           path: '$assigned_user',
-          preserveNullAndEmptyArrays: true
-        }
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $project: {
-          complain_users: 0 // hide the full complain_users array
-        }
-      }
-    ])
+          complain_users: 0,
+        },
+      },
+    ]);
 
-    if (!complains) {
-      return errorResponse(res, 'Complain does not exist', {}, 404)
+    // Aggregation returns [] when there are no matches
+    if (complains.length === 0) {
+      return successResponse(
+        res,
+        'No complaints found for the given filters',
+        []
+      );
     }
 
-    return successResponse(res, 'Complain fetched successfully', complains)
+    return successResponse(
+      res,
+      'Complaints fetched successfully',
+      complains
+    );
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 exports.getCreateComplainController = async (req, res, next) => {
   try {
